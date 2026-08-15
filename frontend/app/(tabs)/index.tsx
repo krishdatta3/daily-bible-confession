@@ -51,12 +51,26 @@ export default function TodayScreen() {
         }}
         showsVerticalScrollIndicator={false}
       >
-        <Text style={[styles.greeting, { color: colors.onSurfaceSecondary }]}>
-          {t(greetingKey)}
-        </Text>
-        <Text style={[styles.date, { color: colors.onSurface }]}>
-          {formatLongDate(today, lang)}
-        </Text>
+        <View style={styles.headerRow}>
+          <View style={{ flex: 1 }}>
+            <Text style={[styles.greeting, { color: colors.onSurfaceSecondary }]}>
+              {t(greetingKey)}
+            </Text>
+            <Text style={[styles.date, { color: colors.onSurface }]}>
+              {formatLongDate(today, lang)}
+            </Text>
+          </View>
+          <Pressable
+            testID="open-favourites-button"
+            onPress={() => {
+              Haptics.selectionAsync();
+              router.push("/favourites");
+            }}
+            style={[styles.favBtn, { backgroundColor: colors.surfaceSecondary }]}
+          >
+            <Feather name="bookmark" size={22} color={colors.brandPrimary} />
+          </Pressable>
+        </View>
 
         {/* Hero card */}
         <View style={[styles.hero, { borderColor: colors.border }]} testID="today-hero-card">
@@ -164,6 +178,15 @@ export default function TodayScreen() {
 
 const styles = StyleSheet.create({
   root: { flex: 1 },
+  headerRow: { flexDirection: "row", alignItems: "flex-start" },
+  favBtn: {
+    width: 44,
+    height: 44,
+    borderRadius: radius.pill,
+    alignItems: "center",
+    justifyContent: "center",
+    marginTop: 4,
+  },
   greeting: { fontFamily: fonts.textMedium, fontSize: 14 },
   date: {
     fontFamily: fonts.displayBold,

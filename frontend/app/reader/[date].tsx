@@ -21,6 +21,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useTheme } from "@/src/theme/ThemeContext";
 import { useLanguage } from "@/src/i18n/LanguageContext";
 import { useProgress, POINTS_PER_DAY } from "@/src/context/ProgressContext";
+import { useFavourites, favId } from "@/src/context/FavouritesContext";
 import { useToast } from "@/src/components/Toast";
 import { ShareCard } from "@/src/components/ShareCard";
 import {
@@ -48,6 +49,7 @@ export default function ReaderScreen() {
   const { colors, isDark } = useTheme();
   const { t, lang } = useLanguage();
   const { markComplete, currentStreak } = useProgress();
+  const { isFav, toggleFav } = useFavourites();
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { showToast } = useToast();
@@ -171,6 +173,15 @@ export default function ReaderScreen() {
     }
   };
 
+  const verseFavId = step.kind === "verse" ? favId(step.verse) : null;
+  const favActive = verseFavId ? isFav(verseFavId) : false;
+  const onBookmark = () => {
+    if (step.kind !== "verse") return;
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    const added = toggleFav(step.verse);
+    showToast(added ? t("fav_added") : t("fav_removed"), added ? "success" : "info");
+  };
+
   return (
     <View style={styles.root}>
       <StatusBar style="light" />
@@ -213,6 +224,20 @@ export default function ReaderScreen() {
             />
           )}
         </Pressable>
+        {step.kind === "verse" && (
+          <Pressable
+            testID="reader-bookmark-button"
+            onPress={onBookmark}
+            hitSlop={10}
+            style={styles.iconBtn}
+          >
+            <Feather
+              name="bookmark"
+              size={21}
+              color={favActive ? colors.brandPrimary : "#FAF9F6"}
+            />
+          </Pressable>
+        )}
         <Pressable
           testID="reader-share-button"
           onPress={onShare}
@@ -250,7 +275,7 @@ export default function ReaderScreen() {
                 </Text>
               </View>
               <Text style={styles.verseText}>{step.verse[lang]}</Text>
-              <Text style={styles.verseRef}>— {step.verse.ref[lang]}</Text>
+              <Text style={styles.verseRef}>{t("source")}: {step.verse.ref[lang]}</Text>
             </>
           ) : step.kind === "confession" ? (
             <>

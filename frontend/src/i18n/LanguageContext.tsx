@@ -111,6 +111,11 @@ const STRINGS: Dict = {
   share_unavailable: { hi: "इस डिवाइस पर शेयर उपलब्ध नहीं है", en: "Sharing is not available on this device" },
   share_error: { hi: "शेयर नहीं हो सका", en: "Could not share" },
   special_badge: { hi: "विशेष दिन", en: "Special Day" },
+  source: { hi: "आधार", en: "Based on" },
+  fav_title: { hi: "पसंदीदा वचन", en: "Favourite Verses" },
+  fav_empty: { hi: "अभी कोई पसंदीदा वचन नहीं। रीडर में बुकमार्क आइकन दबाकर वचन सहेजें।", en: "No favourites yet. Tap the bookmark icon in the reader to save verses." },
+  fav_added: { hi: "पसंदीदा में जोड़ा गया 🔖", en: "Added to favourites 🔖" },
+  fav_removed: { hi: "पसंदीदा से हटाया गया", en: "Removed from favourites" },
 };
 
 interface LanguageContextValue {

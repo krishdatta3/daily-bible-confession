@@ -5,6 +5,7 @@ from starlette.middleware.cors import CORSMiddleware
 from motor.motor_asyncio import AsyncIOMotorClient
 import os
 import re
+import asyncio
 import hashlib
 import logging
 from pathlib import Path
@@ -14,6 +15,7 @@ import uuid
 from datetime import datetime
 
 from emergentintegrations.llm.openai import OpenAITextToSpeech
+from elevenlabs.client import ElevenLabs
 
 
 ROOT_DIR = Path(__file__).parent
@@ -70,17 +72,61 @@ TTS_FORMAT = "mp3"
 
 _tts = OpenAITextToSpeech(api_key=os.environ["EMERGENT_LLM_KEY"])
 
+# ElevenLabs (natural multilingual Hindi voice) — activates only when a real
+# ELEVENLABS_API_KEY is provided; otherwise we fall back to OpenAI TTS.
+_eleven_client = None
+_eleven_voice_cache = None
+
+
+def eleven_enabled() -> bool:
+    key = os.environ.get("ELEVENLABS_API_KEY", "").strip().strip('"')
+    return bool(key)
+
+
+def _get_eleven() -> ElevenLabs:
+    global _eleven_client
+    if _eleven_client is None:
+        key = os.environ.get("ELEVENLABS_API_KEY", "").strip().strip('"')
+        _eleven_client = ElevenLabs(api_key=key)
+    return _eleven_client
+
+
+def _eleven_voice_id() -> str:
+    global _eleven_voice_cache
+    vid = os.environ.get("ELEVENLABS_VOICE_ID", "").strip().strip('"')
+    if vid:
+        return vid
+    if _eleven_voice_cache:
+        return _eleven_voice_cache
+    voices = _get_eleven().voices.get_all()
+    _eleven_voice_cache = voices.voices[0].voice_id
+    return _eleven_voice_cache
+
+
+def _generate_eleven(text: str) -> bytes:
+    audio = _get_eleven().text_to_speech.convert(
+        text=text,
+        voice_id=_eleven_voice_id(),
+        model_id="eleven_multilingual_v2",
+        output_format="mp3_44100_128",
+    )
+    data = b""
+    for chunk in audio:
+        data += chunk
+    return data
+
 
 def clean_for_tts(text: str) -> str:
     text = re.sub(r"https?://\S+", "", text)
     text = re.sub(r"`{1,3}[^`]*`{1,3}", "", text)
     text = re.sub(r"[*_#>~|]", "", text)
-    text = text.replace("“", "").replace("”", "").replace("—", " ")
+    text = text.replace("\u201c", "").replace("\u201d", "").replace("\u2014", " ")
     return re.sub(r"\s+", " ", text).strip()
 
 
-def _cache_key(text: str) -> str:
-    raw = f"{text}|{TTS_VOICE}|{TTS_MODEL}|{TTS_FORMAT}"
+def _cache_key(text: str, provider: str) -> str:
+    voice = _eleven_voice_id() if provider == "el" else TTS_VOICE
+    raw = f"{provider}|{text}|{voice}|{TTS_MODEL}|{TTS_FORMAT}"
     return hashlib.sha256(raw.encode("utf-8")).hexdigest()
 
 
@@ -95,21 +141,43 @@ async def create_tts(req: TTSRequest):
         raise HTTPException(status_code=400, detail="Empty text")
     if len(cleaned) > 4096:
         cleaned = cleaned[:4096]
-    key = _cache_key(cleaned)
+
+    use_eleven = eleven_enabled()
+    provider = "el" if use_eleven else "oa"
+    try:
+        key = _cache_key(cleaned, provider)
+    except Exception as e:
+        logger.error(f"TTS voice resolution failed, falling back to OpenAI: {e}")
+        use_eleven = False
+        provider = "oa"
+        key = _cache_key(cleaned, provider)
+
     path = TTS_CACHE / f"{key}.{TTS_FORMAT}"
     if not path.exists():
-        try:
-            audio_bytes = await _tts.generate_speech(
-                text=cleaned,
-                model=TTS_MODEL,
-                voice=TTS_VOICE,
-                response_format=TTS_FORMAT,
-            )
+        audio_bytes = None
+        if use_eleven:
+            try:
+                audio_bytes = await asyncio.to_thread(_generate_eleven, cleaned)
+            except Exception as e:
+                logger.error(f"ElevenLabs TTS failed, falling back to OpenAI: {e}")
+                audio_bytes = None
+                provider = "oa"
+                key = _cache_key(cleaned, provider)
+                path = TTS_CACHE / f"{key}.{TTS_FORMAT}"
+        if audio_bytes is None and not path.exists():
+            try:
+                audio_bytes = await _tts.generate_speech(
+                    text=cleaned,
+                    model=TTS_MODEL,
+                    voice=TTS_VOICE,
+                    response_format=TTS_FORMAT,
+                )
+            except Exception as e:
+                logger.error(f"TTS generation failed: {e}")
+                raise HTTPException(status_code=502, detail="TTS generation failed")
+        if audio_bytes is not None:
             with open(path, "wb") as f:
                 f.write(audio_bytes)
-        except Exception as e:
-            logger.error(f"TTS generation failed: {e}")
-            raise HTTPException(status_code=502, detail="TTS generation failed")
     return {"url": f"/api/tts/{key}.{TTS_FORMAT}"}
 
 

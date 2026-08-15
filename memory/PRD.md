@@ -74,4 +74,17 @@ theme, elegant typography, premium look, easy for elderly.
 - P2: Backend TTS cache size cap; migrate remaining RN-web shadow*/pointerEvents props.
 
 ## Next Tasks
-- On user request: bookmarking, natural Hindi voice (ElevenLabs), journal export, more special days.
+- On user request: journal export, natural Hindi voice refinements, additional bookmark organization.
+
+## Iteration 3 (2026-08-15) — first-person verses + favourites + more special days + ElevenLabs
+- **First-person अंगीकार**: every daily verse rewritten as a personal declaration ("मैं...") in Hindi + English,
+  with the scripture kept as source shown as "आधार: <ref>". Files: `src/content/content.ts`, `src/content/special.ts`, `src/content/types.ts`.
+- **Favourite Verses**: `reader-bookmark-button` (verse steps only) toggles saving; `/app/favourites.tsx` screen
+  (opened via `open-favourites-button` on Today header) lists/removes saved verses; persisted locally
+  (`src/context/FavouritesContext.tsx`).
+- **More Special Days**: added movable Good Friday & Easter via Gregorian computus (`getMovableSpecial` in special.ts),
+  alongside fixed New Year / Christmas Eve / Christmas / Year End; reader shows special-day badge.
+- **ElevenLabs (natural Hindi)**: backend TTS now prefers ElevenLabs `eleven_multilingual_v2` when
+  `ELEVENLABS_API_KEY` is set (env placeholder empty for now → OpenAI `tts-1` remains the active fallback).
+  User can paste their ElevenLabs key (+ optional `ELEVENLABS_VOICE_ID`) in .env / deployment secrets to activate.
+- Testing agent iteration_3: ALL PASS (backend 8/8 + full frontend). No blocking bugs.

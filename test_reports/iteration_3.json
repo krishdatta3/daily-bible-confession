@@ -1,0 +1,32 @@
+{
+  "summary": "Iteration 3 tested end-to-end. Backend TTS suite 8/8 pass (POST returns cached URL, GET returns audio/mpeg >1KB, empty/whitespace -> 400, unknown key -> 404, English works, cache-hit deterministic). Frontend: verses now display first-person Hindi text starting with 'मैं...' and source line 'आधार: <ref>' (e.g. 'आधार: रोमियों 4:20'). reader-bookmark-button hidden on confession/prayer steps and visible only on verse steps as required. Bookmark toggles fav — success/info toast fires and icon turns amber. open-favourites-button on Today header navigates to /favourites; saved verse shows theme tag (विश्वास), first-person text, and 'आधार:' reference; fav-remove-* removes it. Favourites persist across hard reload (localStorage). Full flow works: Today → start-confession-button → confession + 7 verses (all first-person) → prayer → appreciation-badge with +10 points & streak=1; back to Today shows 'आज पूरा हुआ' chip and 'दोबारा पढ़ें' CTA. Listen (reader-listen-button) and Share (reader-share-button) present and don't crash (web share shows 'unavailable' toast as expected). Movable-special logic verified by code inspection: computus for 2026 yields Easter=Apr 5 & Good Friday=Apr 3, and getDayContent returns curated special content with badge; fixed 12-25 Christmas special present. No red-screen errors; only cosmetic RN-web warnings (shadow*, pointerEvents, useNativeDriver) that do not affect functionality.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [],
+    "react_native_issues": [
+      {"component": "styles.*", "issue": "Deprecation warning at runtime on web: 'shadow*' style props are deprecated — use style.boxShadow (non-blocking; cosmetic warning only)."},
+      {"component": "reader/[date].tsx", "issue": "props.pointerEvents is deprecated — move to style.pointerEvents on the specialWrap View (line ~252). Non-blocking warning."},
+      {"component": "reader/[date].tsx Animated", "issue": "Web preview warns 'useNativeDriver is not supported'. Expected on web; for native builds this is fine. Non-blocking."}
+    ]
+  },
+  "test_report_links": ["/app/backend/tests/test_tts.py", "/app/test_reports/pytest/iteration_3.xml"],
+  "action_items": [
+    "(Optional cosmetic) Replace legacy 'shadow*' StyleSheet props with boxShadow to silence RN-web warnings.",
+    "(Optional cosmetic) Move `pointerEvents=\"none\"` on <View> in reader/[date].tsx specialWrap into style prop to silence deprecation warning.",
+    "ELEVENLABS_API_KEY currently empty — OpenAI fallback exercised and passing. When key is added, add a smoke test covering el-provider path."
+  ],
+  "critical_code_review_comments": [
+    "server.py: logger is defined AFTER it is referenced inside create_tts (see line 150). In practice the except block rarely triggers, but a runtime NameError would occur if ElevenLabs voice lookup fails before logger is initialised. Move logging.basicConfig / logger = getLogger to top of file (before api_router definitions).",
+    "Favourites uses id = ref.en + first 24 chars of en — sufficient for current data set but collision-prone if new verses are added; consider hashing full en for stability.",
+    "Content files are large (special.ts + content.ts) but within acceptable size (<700 lines each), no split needed."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "100%", "frontend": "100%"},
+  "seed_data_creation": "None. Local storage state only (favourites, progress).",
+  "retest_needed": false,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Backend URL uses EXPO_PUBLIC_BACKEND_URL. Public reader path /reader/<date-key>. Verse step count = 7 so full flow requires 9 next-clicks (confession + 7 verses + prayer). Appreciation route uses testID='appreciation-badge' and 'appreciation-done-button'. Favourites are localStorage-backed (key favourites_v1) and survive hard reload. ELEVENLABS_API_KEY intentionally empty in this iteration → OpenAI TTS path exercised.",
+  "rca_of_issue": "N/A — no bugs found in this iteration."
+}

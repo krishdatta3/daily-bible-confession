@@ -1,13 +1,13 @@
-// Offline Bible confession content. Bilingual (Hindi default + English).
-// Verses are organized by 7 themes; each day composes one verse per theme,
-// plus a daily confession, prayer and encouragement. This deterministically
-// generates a unique-feeling plan for every day of the year (offline).
+// Offline Bible confession content — FIRST-PERSON declarations (Hindi default +
+// English). Each verse is phrased as a personal confession ("मैं...") and its
+// scripture source is kept in `ref`. One verse per theme composes each day.
 
 import { dayOfYear } from "@/src/utils/date";
 import { Bilingual, DayContent, DayVerse, ThemeKey, Verse } from "./types";
-import { EXTRA_VERSES, SPECIAL_DAYS } from "./special";
+import { EXTRA_VERSES, FIXED_SPECIAL_DAYS, getMovableSpecial } from "./special";
 
 export type { ThemeKey, Verse, DayVerse, Bilingual, DayContent } from "./types";
+
 export const THEME_LABELS: Record<ThemeKey, Bilingual> = {
   faith: { hi: "विश्वास", en: "Faith" },
   blessing: { hi: "आशीष", en: "Blessing" },
@@ -30,67 +30,67 @@ export const THEME_ORDER: ThemeKey[] = [
 
 const VERSES: Record<ThemeKey, Verse[]> = {
   faith: [
-    { ref: { hi: "इब्रानियों 11:1", en: "Hebrews 11:1" }, hi: "अब विश्वास आशा की हुई वस्तुओं का निश्चय, और अनदेखी वस्तुओं का प्रमाण है।", en: "Now faith is the assurance of things hoped for, the conviction of things not seen." },
-    { ref: { hi: "मरकुस 11:24", en: "Mark 11:24" }, hi: "जो कुछ तुम प्रार्थना करके माँगते हो, विश्वास करो कि तुम्हें मिल गया, तो तुम्हारे लिये हो जाएगा।", en: "Whatever you ask in prayer, believe that you have received it, and it will be yours." },
-    { ref: { hi: "2 कुरिन्थियों 5:7", en: "2 Corinthians 5:7" }, hi: "क्योंकि हम रूप देखकर नहीं, पर विश्वास से चलते हैं।", en: "For we walk by faith, not by sight." },
-    { ref: { hi: "रोमियों 10:17", en: "Romans 10:17" }, hi: "विश्वास सुनने से, और सुनना मसीह के वचन से होता है।", en: "So faith comes from hearing, and hearing through the word of Christ." },
-    { ref: { hi: "मरकुस 9:23", en: "Mark 9:23" }, hi: "विश्वास करने वाले के लिये सब कुछ सम्भव है।", en: "All things are possible for one who believes." },
-    { ref: { hi: "इब्रानियों 11:6", en: "Hebrews 11:6" }, hi: "और विश्वास बिना उसे प्रसन्न करना अनहोना है।", en: "And without faith it is impossible to please God." },
-    { ref: { hi: "नीतिवचन 3:5", en: "Proverbs 3:5" }, hi: "अपने सम्पूर्ण मन से यहोवा पर भरोसा रख, और अपनी समझ का सहारा न ले।", en: "Trust in the LORD with all your heart, and do not lean on your own understanding." },
+    { ref: { hi: "इब्रानियों 11:1", en: "Hebrews 11:1" }, hi: "मैं विश्वास से जीता हूँ — जो मैंने आशा की है उसका मुझे निश्चय है।", en: "I live by faith—I am assured of what I hope for." },
+    { ref: { hi: "मरकुस 11:24", en: "Mark 11:24" }, hi: "मैं प्रार्थना में जो माँगता हूँ, विश्वास करता हूँ कि वह मुझे मिल गया है।", en: "Whatever I ask in prayer, I believe I have received it." },
+    { ref: { hi: "2 कुरिन्थियों 5:7", en: "2 Corinthians 5:7" }, hi: "मैं रूप देखकर नहीं, पर विश्वास से चलता हूँ।", en: "I walk by faith, not by sight." },
+    { ref: { hi: "रोमियों 10:17", en: "Romans 10:17" }, hi: "मैं परमेश्वर का वचन सुनता हूँ, और मेरा विश्वास दिन-प्रतिदिन बढ़ता है।", en: "I hear God's word, and my faith grows day by day." },
+    { ref: { hi: "मरकुस 9:23", en: "Mark 9:23" }, hi: "मैं विश्वास करता हूँ, इसलिए मेरे लिए सब कुछ सम्भव है।", en: "I believe, therefore all things are possible for me." },
+    { ref: { hi: "इब्रानियों 11:6", en: "Hebrews 11:6" }, hi: "मैं विश्वास से परमेश्वर को प्रसन्न करता हूँ और उसकी खोज करता हूँ।", en: "By faith I please God and I seek Him." },
+    { ref: { hi: "नीतिवचन 3:5", en: "Proverbs 3:5" }, hi: "मैं अपने पूरे मन से यहोवा पर भरोसा रखता हूँ, अपनी समझ का सहारा नहीं लेता।", en: "I trust in the LORD with all my heart and do not lean on my own understanding." },
   ],
   blessing: [
-    { ref: { hi: "गिनती 6:24", en: "Numbers 6:24" }, hi: "यहोवा तुझे आशीष दे और तेरी रक्षा करे।", en: "The LORD bless you and keep you." },
-    { ref: { hi: "यिर्मयाह 17:7", en: "Jeremiah 17:7" }, hi: "धन्य है वह पुरुष जो यहोवा पर भरोसा रखता है, जिसका आसरा यहोवा है।", en: "Blessed is the man who trusts in the LORD, whose trust is the LORD." },
-    { ref: { hi: "इफिसियों 1:3", en: "Ephesians 1:3" }, hi: "परमेश्वर ने मसीह में हमें स्वर्गीय स्थानों में सब प्रकार की आत्मिक आशीषें दी हैं।", en: "God has blessed us in Christ with every spiritual blessing in the heavenly places." },
-    { ref: { hi: "नीतिवचन 10:22", en: "Proverbs 10:22" }, hi: "यहोवा की आशीष ही से समृद्धि होती है, और वह उसके साथ दुःख नहीं मिलाता।", en: "The blessing of the LORD makes rich, and he adds no sorrow with it." },
-    { ref: { hi: "भजन संहिता 23:1", en: "Psalm 23:1" }, hi: "यहोवा मेरा चरवाहा है, मुझे कुछ घटी न होगी।", en: "The LORD is my shepherd; I shall not want." },
-    { ref: { hi: "भजन संहिता 1:3", en: "Psalm 1:3" }, hi: "वह उस वृक्ष के समान है, जो जल के सोतों के किनारे लगाया गया है और अपने समय पर फलता है।", en: "He is like a tree planted by streams of water that yields its fruit in its season." },
-    { ref: { hi: "व्यवस्थाविवरण 28:2", en: "Deuteronomy 28:2" }, hi: "ये सब आशीषें तुझ पर आएँगी और तुझे मिलेंगी, यदि तू यहोवा की सुने।", en: "All these blessings shall come upon you if you obey the voice of the LORD." },
+    { ref: { hi: "गिनती 6:24", en: "Numbers 6:24" }, hi: "मैं यहोवा की आशीष और सुरक्षा में हूँ।", en: "I am blessed and kept by the LORD." },
+    { ref: { hi: "यिर्मयाह 17:7", en: "Jeremiah 17:7" }, hi: "मैं यहोवा पर भरोसा रखता हूँ, इसलिए मैं धन्य हूँ।", en: "I trust in the LORD, therefore I am blessed." },
+    { ref: { hi: "इफिसियों 1:3", en: "Ephesians 1:3" }, hi: "मैं मसीह में हर आत्मिक आशीष से आशीषित हूँ।", en: "I am blessed with every spiritual blessing in Christ." },
+    { ref: { hi: "नीतिवचन 10:22", en: "Proverbs 10:22" }, hi: "यहोवा की आशीष मुझे समृद्ध करती है, और उसमें कोई दुःख नहीं।", en: "The LORD's blessing makes me rich, and adds no sorrow." },
+    { ref: { hi: "भजन संहिता 23:1", en: "Psalm 23:1" }, hi: "यहोवा मेरा चरवाहा है; मुझे किसी वस्तु की घटी नहीं होगी।", en: "The LORD is my shepherd; I shall not want." },
+    { ref: { hi: "भजन संहिता 1:3", en: "Psalm 1:3" }, hi: "मैं जल के सोतों के किनारे लगे वृक्ष के समान हूँ, जो अपने समय पर फलता है।", en: "I am like a tree planted by streams of water, yielding fruit in season." },
+    { ref: { hi: "व्यवस्थाविवरण 28:2", en: "Deuteronomy 28:2" }, hi: "मैं यहोवा की सुनता हूँ, इसलिए उसकी आशीषें मुझ पर आती हैं।", en: "I obey the LORD, so His blessings come upon me." },
   ],
   healing: [
-    { ref: { hi: "यिर्मयाह 30:17", en: "Jeremiah 30:17" }, hi: "यहोवा की यह वाणी है, मैं तुझे भला चंगा कर दूँगा और तेरे घावों को अच्छा कर दूँगा।", en: "For I will restore health to you, and your wounds I will heal, declares the LORD." },
-    { ref: { hi: "यशायाह 53:5", en: "Isaiah 53:5" }, hi: "उसके कोड़े खाने से हम चंगे हो जाते हैं।", en: "And with his wounds we are healed." },
-    { ref: { hi: "भजन संहिता 103:3", en: "Psalm 103:3" }, hi: "वह तेरे सब अधर्म को क्षमा करता, और तेरे सब रोगों को चंगा करता है।", en: "He forgives all your iniquity and heals all your diseases." },
-    { ref: { hi: "1 पतरस 2:24", en: "1 Peter 2:24" }, hi: "उसके मार खाने से तुम चंगे हुए।", en: "By his wounds you have been healed." },
-    { ref: { hi: "निर्गमन 15:26", en: "Exodus 15:26" }, hi: "क्योंकि मैं यहोवा तेरा चंगा करने वाला हूँ।", en: "For I am the LORD, your healer." },
-    { ref: { hi: "भजन संहिता 147:3", en: "Psalm 147:3" }, hi: "वह टूटे मन वालों को चंगा करता है, और उनके घावों पर पट्टी बाँधता है।", en: "He heals the brokenhearted and binds up their wounds." },
-    { ref: { hi: "याकूब 5:15", en: "James 5:15" }, hi: "और विश्वास की प्रार्थना से रोगी बच जाएगा।", en: "And the prayer of faith will save the one who is sick." },
+    { ref: { hi: "यिर्मयाह 30:17", en: "Jeremiah 30:17" }, hi: "परमेश्वर मुझे भला-चंगा करता है और मेरे घावों को अच्छा करता है।", en: "God restores my health and heals my wounds." },
+    { ref: { hi: "यशायाह 53:5", en: "Isaiah 53:5" }, hi: "उसके कोड़े खाने से मैं चंगा हुआ हूँ।", en: "By His wounds I am healed." },
+    { ref: { hi: "भजन संहिता 103:3", en: "Psalm 103:3" }, hi: "वह मेरे सब अधर्म क्षमा करता और मेरे सब रोग चंगा करता है।", en: "He forgives all my sins and heals all my diseases." },
+    { ref: { hi: "1 पतरस 2:24", en: "1 Peter 2:24" }, hi: "उसके मार खाने से मैं चंगा किया गया हूँ।", en: "By His stripes I have been healed." },
+    { ref: { hi: "निर्गमन 15:26", en: "Exodus 15:26" }, hi: "यहोवा मेरा चंगा करने वाला है।", en: "The LORD is my healer." },
+    { ref: { hi: "भजन संहिता 147:3", en: "Psalm 147:3" }, hi: "वह मेरे टूटे मन को चंगा करता और मेरे घावों पर पट्टी बाँधता है।", en: "He heals my broken heart and binds up my wounds." },
+    { ref: { hi: "याकूब 5:15", en: "James 5:15" }, hi: "मैं विश्वास से प्रार्थना करता हूँ, और परमेश्वर मुझे स्वस्थ करता है।", en: "I pray in faith, and God makes me well." },
   ],
   protection: [
-    { ref: { hi: "भजन संहिता 91:1", en: "Psalm 91:1" }, hi: "जो परमप्रधान के छाए हुए स्थान में रहता है, वह सर्वशक्तिमान की छाया में ठहरेगा।", en: "He who dwells in the shelter of the Most High will abide in the shadow of the Almighty." },
-    { ref: { hi: "भजन संहिता 121:7", en: "Psalm 121:7" }, hi: "यहोवा सारी विपत्ति से तेरी रक्षा करेगा, वह तेरे प्राण की रक्षा करेगा।", en: "The LORD will keep you from all evil; he will keep your life." },
-    { ref: { hi: "यशायाह 41:10", en: "Isaiah 41:10" }, hi: "मत डर, क्योंकि मैं तेरे साथ हूँ; मैं तुझे दृढ़ करूँगा और तेरी सहायता करूँगा।", en: "Fear not, for I am with you; I will strengthen you, I will help you." },
-    { ref: { hi: "भजन संहिता 46:1", en: "Psalm 46:1" }, hi: "परमेश्वर हमारा शरणस्थान और बल है, संकट में अति सहज से मिलने वाला सहायक।", en: "God is our refuge and strength, a very present help in trouble." },
-    { ref: { hi: "नीतिवचन 18:10", en: "Proverbs 18:10" }, hi: "यहोवा का नाम दृढ़ गढ़ है; धर्मी उसमें भागकर सुरक्षित रहता है।", en: "The name of the LORD is a strong tower; the righteous man runs into it and is safe." },
-    { ref: { hi: "भजन संहिता 34:7", en: "Psalm 34:7" }, hi: "यहोवा का दूत उसके डरवैयों के चारों ओर छावनी किए रहता है और उन्हें बचाता है।", en: "The angel of the LORD encamps around those who fear him, and delivers them." },
-    { ref: { hi: "2 थिस्सलुनीकियों 3:3", en: "2 Thessalonians 3:3" }, hi: "पर प्रभु विश्वासयोग्य है; वह तुम्हें दृढ़ करेगा और उस दुष्ट से सुरक्षित रखेगा।", en: "But the Lord is faithful. He will establish you and guard you against the evil one." },
+    { ref: { hi: "भजन संहिता 91:1", en: "Psalm 91:1" }, hi: "मैं परमप्रधान के छाए हुए स्थान में, सर्वशक्तिमान की छाया में रहता हूँ।", en: "I dwell in the shelter of the Most High, under the Almighty's shadow." },
+    { ref: { hi: "भजन संहिता 121:7", en: "Psalm 121:7" }, hi: "यहोवा सब विपत्ति से मेरी रक्षा करता है और मेरे प्राण की रखवाली करता है।", en: "The LORD keeps me from all harm and guards my life." },
+    { ref: { hi: "यशायाह 41:10", en: "Isaiah 41:10" }, hi: "मैं नहीं डरता, क्योंकि परमेश्वर मेरे साथ है; वह मुझे दृढ़ करता है।", en: "I will not fear, for God is with me; He strengthens me." },
+    { ref: { hi: "भजन संहिता 46:1", en: "Psalm 46:1" }, hi: "परमेश्वर मेरा शरणस्थान और बल है, संकट में मेरा सहायक।", en: "God is my refuge and strength, my help in trouble." },
+    { ref: { hi: "नीतिवचन 18:10", en: "Proverbs 18:10" }, hi: "मैं यहोवा के नाम रूपी दृढ़ गढ़ में भागकर सुरक्षित रहता हूँ।", en: "I run into the LORD's name, a strong tower, and I am safe." },
+    { ref: { hi: "भजन संहिता 34:7", en: "Psalm 34:7" }, hi: "यहोवा का दूत मेरे चारों ओर छावनी किए रहता और मुझे बचाता है।", en: "The angel of the LORD surrounds me and delivers me." },
+    { ref: { hi: "2 थिस्सलुनीकियों 3:3", en: "2 Thessalonians 3:3" }, hi: "प्रभु विश्वासयोग्य है; वह मुझे दृढ़ करता और दुष्ट से सुरक्षित रखता है।", en: "The Lord is faithful; He strengthens me and guards me from the evil one." },
   ],
   victory: [
-    { ref: { hi: "1 कुरिन्थियों 15:57", en: "1 Corinthians 15:57" }, hi: "पर परमेश्वर का धन्यवाद हो, जो हमारे प्रभु यीशु मसीह के द्वारा हमें जय दिलाता है।", en: "But thanks be to God, who gives us the victory through our Lord Jesus Christ." },
-    { ref: { hi: "रोमियों 8:37", en: "Romans 8:37" }, hi: "इन सब बातों में हम उसके द्वारा, जिसने हम से प्रेम किया, जयवन्त से भी बढ़कर हैं।", en: "In all these things we are more than conquerors through him who loved us." },
-    { ref: { hi: "व्यवस्थाविवरण 20:4", en: "Deuteronomy 20:4" }, hi: "क्योंकि तुम्हारा परमेश्वर यहोवा तुम्हारे संग चलता है, कि तुम्हें जय दिलाए।", en: "For the LORD your God goes with you to fight for you against your enemies, to give you the victory." },
-    { ref: { hi: "1 यूहन्ना 5:4", en: "1 John 5:4" }, hi: "जो कुछ परमेश्वर से जन्मा है, वह संसार पर जय पाता है; और वह जय हमारा विश्वास है।", en: "For everyone who has been born of God overcomes the world. And this is the victory: our faith." },
-    { ref: { hi: "फिलिप्पियों 4:13", en: "Philippians 4:13" }, hi: "जो मुझे सामर्थ्य देता है उसमें मैं सब कुछ कर सकता हूँ।", en: "I can do all things through him who strengthens me." },
-    { ref: { hi: "यहोशू 1:9", en: "Joshua 1:9" }, hi: "हियाव बाँध और दृढ़ हो जा; मत डर, क्योंकि जहाँ कहीं तू जाए वहाँ तेरा परमेश्वर यहोवा तेरे संग रहेगा।", en: "Be strong and courageous. Do not be afraid, for the LORD your God is with you wherever you go." },
-    { ref: { hi: "2 कुरिन्थियों 2:14", en: "2 Corinthians 2:14" }, hi: "परमेश्वर का धन्यवाद हो, जो मसीह में सदा हमें जय के उत्सव में लिए फिरता है।", en: "Thanks be to God, who in Christ always leads us in triumphal procession." },
+    { ref: { hi: "1 कुरिन्थियों 15:57", en: "1 Corinthians 15:57" }, hi: "परमेश्वर मुझे प्रभु यीशु मसीह के द्वारा जय दिलाता है।", en: "God gives me the victory through my Lord Jesus Christ." },
+    { ref: { hi: "रोमियों 8:37", en: "Romans 8:37" }, hi: "मसीह के प्रेम में मैं जयवन्त से भी बढ़कर हूँ।", en: "In Christ's love I am more than a conqueror." },
+    { ref: { hi: "व्यवस्थाविवरण 20:4", en: "Deuteronomy 20:4" }, hi: "मेरा परमेश्वर मेरे संग चलता और मेरे लिए लड़कर मुझे जय दिलाता है।", en: "My God goes with me and fights for me to give me victory." },
+    { ref: { hi: "1 यूहन्ना 5:4", en: "1 John 5:4" }, hi: "मैं परमेश्वर से जन्मा हूँ, और अपने विश्वास से संसार पर जय पाता हूँ।", en: "I am born of God, and by my faith I overcome the world." },
+    { ref: { hi: "फिलिप्पियों 4:13", en: "Philippians 4:13" }, hi: "जो मुझे सामर्थ्य देता है, उस मसीह में मैं सब कुछ कर सकता हूँ।", en: "I can do all things through Christ who strengthens me." },
+    { ref: { hi: "यहोशू 1:9", en: "Joshua 1:9" }, hi: "मैं दृढ़ और साहसी हूँ; मैं नहीं डरता, क्योंकि यहोवा मेरे संग है।", en: "I am strong and courageous; I do not fear, for the LORD is with me." },
+    { ref: { hi: "2 कुरिन्थियों 2:14", en: "2 Corinthians 2:14" }, hi: "परमेश्वर मसीह में सदा मुझे जय के उत्सव में लिए चलता है।", en: "God always leads me in triumph in Christ." },
   ],
   grace: [
-    { ref: { hi: "2 कुरिन्थियों 12:9", en: "2 Corinthians 12:9" }, hi: "मेरा अनुग्रह तेरे लिये बहुत है, क्योंकि मेरी सामर्थ्य निर्बलता में सिद्ध होती है।", en: "My grace is sufficient for you, for my power is made perfect in weakness." },
-    { ref: { hi: "इफिसियों 2:8", en: "Ephesians 2:8" }, hi: "क्योंकि विश्वास के द्वारा अनुग्रह ही से तुम्हारा उद्धार हुआ है; यह परमेश्वर का दान है।", en: "For by grace you have been saved through faith. It is the gift of God." },
-    { ref: { hi: "यूहन्ना 1:16", en: "John 1:16" }, hi: "उसकी परिपूर्णता में से हम सब ने अनुग्रह पर अनुग्रह पाया।", en: "From his fullness we have all received, grace upon grace." },
-    { ref: { hi: "इब्रानियों 4:16", en: "Hebrews 4:16" }, hi: "आओ, हम अनुग्रह के सिंहासन के निकट हियाव बाँधकर चलें।", en: "Let us then with confidence draw near to the throne of grace." },
-    { ref: { hi: "तीतुस 2:11", en: "Titus 2:11" }, hi: "क्योंकि परमेश्वर का अनुग्रह प्रगट हुआ है, जो सब मनुष्यों के उद्धार का कारण है।", en: "For the grace of God has appeared, bringing salvation for all people." },
-    { ref: { hi: "रोमियों 5:20", en: "Romans 5:20" }, hi: "परन्तु जहाँ पाप बहुत हुआ, वहाँ अनुग्रह उससे भी कहीं अधिक बढ़ा।", en: "But where sin increased, grace abounded all the more." },
-    { ref: { hi: "2 कुरिन्थियों 9:8", en: "2 Corinthians 9:8" }, hi: "परमेश्वर सब प्रकार का अनुग्रह तुम्हें बहुतायत से दे सकता है।", en: "And God is able to make all grace abound to you." },
+    { ref: { hi: "2 कुरिन्थियों 12:9", en: "2 Corinthians 12:9" }, hi: "परमेश्वर का अनुग्रह मेरे लिए बहुत है; उसकी सामर्थ्य मेरी निर्बलता में सिद्ध होती है।", en: "God's grace is sufficient for me; His power is perfected in my weakness." },
+    { ref: { hi: "इफिसियों 2:8", en: "Ephesians 2:8" }, hi: "मैं विश्वास के द्वारा अनुग्रह से बचाया गया हूँ; यह परमेश्वर का दान है।", en: "By grace through faith I am saved; it is God's gift." },
+    { ref: { hi: "यूहन्ना 1:16", en: "John 1:16" }, hi: "मैंने उसकी परिपूर्णता में से अनुग्रह पर अनुग्रह पाया है।", en: "From His fullness I have received grace upon grace." },
+    { ref: { hi: "इब्रानियों 4:16", en: "Hebrews 4:16" }, hi: "मैं अनुग्रह के सिंहासन के निकट हियाव बाँधकर आता हूँ।", en: "I come with confidence to the throne of grace." },
+    { ref: { hi: "तीतुस 2:11", en: "Titus 2:11" }, hi: "परमेश्वर का उद्धार देने वाला अनुग्रह मुझ पर प्रगट हुआ है।", en: "God's grace that brings salvation has appeared to me." },
+    { ref: { hi: "रोमियों 5:20", en: "Romans 5:20" }, hi: "जहाँ पाप बढ़ा, वहाँ परमेश्वर का अनुग्रह मुझ पर और भी अधिक बढ़ा।", en: "Where sin increased, God's grace toward me abounded all the more." },
+    { ref: { hi: "2 कुरिन्थियों 9:8", en: "2 Corinthians 9:8" }, hi: "परमेश्वर मुझे सब प्रकार का अनुग्रह बहुतायत से देता है।", en: "God makes all grace abound to me." },
   ],
   love: [
-    { ref: { hi: "यूहन्ना 3:16", en: "John 3:16" }, hi: "क्योंकि परमेश्वर ने जगत से ऐसा प्रेम रखा कि उसने अपना एकलौता पुत्र दे दिया।", en: "For God so loved the world, that he gave his only Son." },
-    { ref: { hi: "रोमियों 8:39", en: "Romans 8:39" }, hi: "कोई भी वस्तु हमें परमेश्वर के उस प्रेम से, जो मसीह यीशु में है, अलग न कर सकेगी।", en: "Nothing will be able to separate us from the love of God in Christ Jesus our Lord." },
-    { ref: { hi: "1 यूहन्ना 4:9", en: "1 John 4:9" }, hi: "परमेश्वर ने अपना प्रेम हम पर इस से प्रगट किया कि उसने अपने एकलौते पुत्र को जगत में भेजा।", en: "God showed his love among us by sending his one and only Son into the world." },
-    { ref: { hi: "यिर्मयाह 31:3", en: "Jeremiah 31:3" }, hi: "मैंने तुझ से सदा के प्रेम से प्रेम रखा है; इसलिये मैंने तुझ पर अपनी करुणा बनाए रखी है।", en: "I have loved you with an everlasting love; therefore I have continued my faithfulness to you." },
-    { ref: { hi: "सपन्याह 3:17", en: "Zephaniah 3:17" }, hi: "तेरा परमेश्वर यहोवा तेरे बीच में है; वह तेरे कारण आनन्द से मगन होगा।", en: "The LORD your God is in your midst; he will rejoice over you with gladness." },
-    { ref: { hi: "रोमियों 5:8", en: "Romans 5:8" }, hi: "जब हम पापी ही थे तब मसीह हमारे लिये मरा; इसी से परमेश्वर हम पर अपने प्रेम को प्रगट करता है।", en: "But God shows his love for us in that while we were still sinners, Christ died for us." },
-    { ref: { hi: "भजन संहिता 136:1", en: "Psalm 136:1" }, hi: "यहोवा का धन्यवाद करो, क्योंकि वह भला है, और उसकी करुणा सदा की है।", en: "Give thanks to the LORD, for he is good, for his steadfast love endures forever." },
+    { ref: { hi: "यूहन्ना 3:16", en: "John 3:16" }, hi: "परमेश्वर ने मुझ से ऐसा प्रेम किया कि अपना एकलौता पुत्र दे दिया।", en: "God so loved me that He gave His only Son." },
+    { ref: { hi: "रोमियों 8:39", en: "Romans 8:39" }, hi: "कोई वस्तु मुझे परमेश्वर के प्रेम से, जो मसीह में है, अलग नहीं कर सकती।", en: "Nothing can separate me from God's love in Christ." },
+    { ref: { hi: "1 यूहन्ना 4:9", en: "1 John 4:9" }, hi: "परमेश्वर ने अपने पुत्र को भेजकर मुझ पर अपना प्रेम प्रगट किया।", en: "God showed His love for me by sending His Son." },
+    { ref: { hi: "यिर्मयाह 31:3", en: "Jeremiah 31:3" }, hi: "परमेश्वर ने मुझ से सदा के प्रेम से प्रेम रखा है।", en: "God has loved me with an everlasting love." },
+    { ref: { hi: "सपन्याह 3:17", en: "Zephaniah 3:17" }, hi: "मेरा परमेश्वर मेरे बीच में है; वह मेरे कारण आनन्द से मगन होता है।", en: "My God is with me; He rejoices over me with gladness." },
+    { ref: { hi: "रोमियों 5:8", en: "Romans 5:8" }, hi: "जब मैं पापी ही था, तब मसीह मेरे लिए मरा — यही उसका प्रेम है।", en: "While I was still a sinner, Christ died for me—this is His love." },
+    { ref: { hi: "भजन संहिता 136:1", en: "Psalm 136:1" }, hi: "मैं यहोवा का धन्यवाद करता हूँ, क्योंकि वह भला है; उसकी करुणा सदा की है।", en: "I give thanks to the LORD, for He is good; His love endures forever." },
   ],
 };
 
@@ -129,7 +129,7 @@ const ENCOURAGEMENTS: Bilingual[] = [
   { hi: "परमेश्वर की प्रतिज्ञाएँ हाँ और आमीन हैं। थामे रह, तेरा आशीर्वाद आ रहा है।", en: "God's promises are yes and amen. Hold on—your blessing is on the way." },
 ];
 
-// Deepen each theme pool with hand-picked extra verses for year-long variety.
+// Deepen each theme pool with hand-picked extra first-person declarations.
 for (const theme of THEME_ORDER) {
   VERSES[theme] = [...VERSES[theme], ...EXTRA_VERSES[theme]];
 }
@@ -145,8 +145,9 @@ function mmdd(date: Date): string {
 }
 
 export function getDayContent(date: Date): DayContent {
-  // Curated special day (holidays) overrides the generated plan.
-  const special = SPECIAL_DAYS[mmdd(date)];
+  // Curated special day (fixed holidays) overrides the generated plan.
+  const fixed = FIXED_SPECIAL_DAYS[mmdd(date)];
+  const special = fixed || getMovableSpecial(date);
   if (special) {
     return {
       verses: special.verses,

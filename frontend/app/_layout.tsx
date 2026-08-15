@@ -11,6 +11,7 @@ import { ThemeProvider } from "@/src/theme/ThemeContext";
 import { LanguageProvider } from "@/src/i18n/LanguageContext";
 import { ProgressProvider } from "@/src/context/ProgressContext";
 import { JournalProvider } from "@/src/context/JournalContext";
+import { FavouritesProvider } from "@/src/context/FavouritesContext";
 import { ToastProvider } from "@/src/components/Toast";
 
 // Disable logbox errors etc so that users can see the app
@@ -51,15 +52,21 @@ export default function RootLayout() {
           <LanguageProvider>
             <ProgressProvider>
               <JournalProvider>
-                <ToastProvider>
-                  <Stack screenOptions={{ headerShown: false }}>
-                    <Stack.Screen name="(tabs)" />
-                    <Stack.Screen
-                      name="reader/[date]"
-                      options={{ animation: "fade" }}
-                    />
-                  </Stack>
-                </ToastProvider>
+                <FavouritesProvider>
+                  <ToastProvider>
+                    <Stack screenOptions={{ headerShown: false }}>
+                      <Stack.Screen name="(tabs)" />
+                      <Stack.Screen
+                        name="reader/[date]"
+                        options={{ animation: "fade" }}
+                      />
+                      <Stack.Screen
+                        name="favourites"
+                        options={{ animation: "slide_from_right" }}
+                      />
+                    </Stack>
+                  </ToastProvider>
+                </FavouritesProvider>
               </JournalProvider>
             </ProgressProvider>
           </LanguageProvider>
