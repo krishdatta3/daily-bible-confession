@@ -1,0 +1,63 @@
+# Daily Bible Confession / Daily Faith Declaration — PRD
+
+## Original Problem Statement
+Build an Android + iOS mobile app to help users make a daily Bible confession (Daily Bible Confession).
+Full-year calendar-based daily schedule; each day ≥7 verses on faith, blessing, healing, protection,
+victory, grace and God's love; each verse shown one-by-one full screen with attractive visuals/glow;
+"Next Verse" navigation; a short daily prayer after 7 verses; an appreciation screen
+("बहुत अच्छा! आपने आज का अंगीकार पूरा किया") with Faith Points, Streak, Daily Badge; daily streak tracking;
+calendar with completed/missed/current-day colors and tap-to-reread; offline; Hindi + English; Dark + Light;
+gamification (points, streaks, weekly champion, monthly certificate, progress dashboard); modern Christian
+theme, elegant typography, premium look, easy for elderly.
+
+## User Choices (gathered)
+- Deliverable: a real, working mobile app.
+- Framework: React Native (Expo) — user accepted (originally requested Flutter; not available on platform).
+- Content: first ~30 days real content + scaffold. (Implemented as themed verse pools that deterministically
+  compose a unique-feeling plan for every day of the year, fully offline.)
+- Daily reminder notifications: Yes (local scheduled reminders; works on real build).
+- Language: both Hindi + English, default Hindi. Theme: both Light + Dark.
+
+## Architecture
+- **Frontend:** Expo Router (SDK 54, React Native 0.81, New Arch). Bottom tabs: Today, Calendar, Progress, Settings.
+  Full-screen stack route `reader/[date]` for the verse reader + appreciation.
+- **Offline-first / no backend dependency:** All content bundled locally (`src/content/content.ts`).
+  Progress, language, theme persisted via `@/src/utils/storage` (AsyncStorage). Backend is the default template only.
+- **State:** React Context — ThemeContext, LanguageContext (i18n hi/en), ProgressContext (points/streak/badges).
+- **Design:** Warm Amber & Stone palette (design_guidelines.json). Playfair Display (display) + DM Sans (text),
+  loaded via expo-font from static TTFs in `assets/fonts`. Feather icons. LinearGradient scrim over expo-image.
+- **Notifications:** `expo-notifications` local DAILY trigger (`src/utils/notifications.ts`), web-guarded.
+
+## Key Files
+- `app/_layout.tsx` — providers, font loading (icon + custom), root stack.
+- `app/(tabs)/{index,calendar,progress,settings}.tsx` — tab screens.
+- `app/reader/[date].tsx` — immersive reader (confession → 7 verses → prayer → appreciation).
+- `src/content/content.ts` — bilingual verses (7 themes), confessions, prayers, encouragements + `getDayContent`.
+- `src/context/ProgressContext.tsx` — streak/points/badges/certificate logic.
+- `src/theme/*`, `src/i18n/LanguageContext.tsx`, `src/utils/{date,format,notifications}.ts`.
+
+## Implemented (2026-06 / build date 2026-08-15)
+- Today dashboard: greeting, elegant date, hero card CTA, 7-day tracker, streak + points stats, completed-today state.
+- Immersive Verse Reader: gradient-scrim over sunrise/cross imagery, theme chips, Playfair verse text, ref,
+  progress segments, smooth cross-fade transitions, large "अगला वचन" CTA, haptics.
+- Daily prayer + Appreciation screen (+10 Faith Points, streak, encouragement, daily badge).
+- Calendar: month grid + prev/next nav, completed/missed/today colors, tap any past/today date to re-read, legend.
+- Progress dashboard: total points, current/longest streak, days completed, 5 achievement badges, monthly certificate.
+- Settings: language toggle (hi/en, live + persisted), theme (light/dark/system, persisted), daily reminder toggle + time chips.
+- Offline persistence of progress, language, theme across reloads.
+- Bilingual (Hindi default + English) throughout; Light + Dark themes.
+
+## Testing
+- Testing agent iteration_1: ~85% pass; 2 bugs found & FIXED:
+  1) duplicate `(tabs)` mount after appreciation (router.replace → router.back) — verified single mount.
+  2) reminder switch on web (added `Platform.OS === 'web'` guard).
+
+## Backlog / Future
+- P1: Verse-level bookmarking & sharing (share verse card image).
+- P1: Audio narration of verses (Emergent OpenAI TTS).
+- P2: Expand hand-authored verse content beyond pooled composition; per-day custom themes.
+- P2: Weekly Faith Champion leaderboard / shareable monthly certificate export.
+- P2: Reminder custom time picker (any time), multiple reminders.
+
+## Next Tasks
+- On user request: enable push/local reminder verification on a real build; add verse sharing; add audio narration.

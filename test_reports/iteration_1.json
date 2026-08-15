@@ -1,0 +1,39 @@
+{
+  "summary": "First testing pass on Daily Bible Confession Expo app (frontend-only, mobile viewport 390x844). Core flows work end-to-end: Today screen renders greeting/date/hero/week-tracker/stats; the Verse Reader advances through 1 confession + 7 verses + 1 prayer with animated progress segments; Appreciation screen correctly shows 'बहुत अच्छा!/Well Done!' with +10 Faith Points and streak=1; returning to Today shows 'Completed Today' chip, Re-read button, updated points (10) and streak (1). Calendar renders month grid with today outlined, prev/next navigation works, future dates disabled. Progress tab shows total points card, streak/longest/days cards, badges grid (First Step earned after completion), locked certificate. Settings tab language toggle (hi↔en) switches all UI live and PERSISTS across reload; theme toggle applies and PERSISTS. Two issues found: (1) After tapping appreciation-done-button, TWO Today screens mount simultaneously (duplicate testIDs) — router.replace('/(tabs)') from reader/[date] pushes another (tabs) instance instead of dismissing the reader. (2) Reminder switch on web toggles on but immediately snaps back OFF (no time chips shown) — requestPermission() rejects on web, causing scheduleReminder path to reset state. No deprecated Expo packages found (expo-av not used; app uses expo-audio-not-needed, expo-camera-not-needed).",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [
+      {"component": "reader/[date].tsx Appreciation onDone", "issue": "router.replace('/(tabs)') from the pushed reader/[date] route causes DUPLICATE mount of the (tabs) stack. After returning, there are 2 elements with data-testid='today-hero-card' (and every other Today testID doubled). Suggested fix: use router.dismissTo('/(tabs)') or router.back() after markComplete, or navigate with router.replace('/(tabs)/') and ensure the reader is popped. Reference: /app/frontend/app/reader/[date].tsx:82", "testID": "today-hero-card", "priority": "HIGH"},
+      {"component": "settings.tsx reminder-switch (web)", "issue": "Toggling reminder-switch to ON does not reveal time chips on web. applyReminder() calls requestPermission() which returns false on web preview, then setReminderOn(false) resets and writes false to storage. UX-wise the toggle silently snaps back OFF with no error/toast. Suggested: on Platform.OS==='web', either disable the switch with a note, or skip scheduleReminder and still persist enabled=true+time. Reference: /app/frontend/app/(tabs)/settings.tsx:46-61", "testID": "reminder-switch", "priority": "MEDIUM"}
+    ],
+    "integration_issues": [
+      {"flow": "Verse Reader → Appreciation → Today", "issue": "Second Today tab instance mounts. Data (points/streak) is still correct via context, but any DOM/testID-based assertions or accessibility trees will see duplicates and users may briefly see a stacked layout / stale header.", "affected_testIDs": ["today-hero-card", "stat-streak", "stat-points", "week-tracker", "start-confession-button"]}
+    ],
+    "design_issues": [
+      {"screen": "General web", "issues": ["Console warning: 'props.pointerEvents is deprecated. Use style.pointerEvents' — coming from a child dependency; low priority but worth silencing.", "Reader animation uses useNativeDriver=true which logs a JS-fallback warning on web (harmless on native, noisy in web console)."]}
+    ],
+    "react_native_issues": []
+  },
+  "test_report_links": [],
+  "action_items": [
+    "Fix duplicate (tabs) mount after appreciation-done: change router.replace('/(tabs)') in /app/frontend/app/reader/[date].tsx (line 82) to router.back() (or router.dismissAll(); router.replace('/(tabs)')). Verify only ONE today-hero-card exists after completion.",
+    "Handle reminder-switch on web: if Platform.OS === 'web', either grey-out the switch with a note ('Reminders unavailable on web preview'), or persist reminderOn=true & time without calling scheduleReminder so time chips display.",
+    "Optional: gate useNativeDriver behind Platform.OS !== 'web' in reader animations to remove console noise."
+  ],
+  "critical_code_review_comments": [
+    "reader/[date].tsx:82 uses router.replace('/(tabs)') which does not pop the pushed reader route on expo-router web — prefer router.back() from a pushed route to return to the tabs cleanly.",
+    "settings.tsx:46 applyReminder does not distinguish web from native; on web requestPermission always fails, giving the user a broken toggle with no feedback.",
+    "content.ts (not viewed here) — please ensure the 7-verse-per-day dataset covers a full year deterministically; runtime worked for today's date but scan for undefined getDayContent for arbitrary dates.",
+    "expo-router Stack.Screen for 'reader/[date]' uses animation:'fade' — fine, but confirm dismissTo behavior when replacing tabs."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "N/A (frontend-only)", "frontend": "~85% (10/12 targeted checks passed)"},
+  "seed_data_creation": "None (offline app, all content bundled; localStorage cleared between runs during testing).",
+  "retest_needed": true,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Public URL: https://bible-confession-app.preview.emergentagent.com — mobile viewport 390x844. Bottom tab labels default to Hindi (आज / कैलेंडर / प्रगति / सेटिंग); after switching to English via lang-segment-en they become Today/Calendar/Progress/Settings. To reproduce the duplicate mount: complete confession → tap appreciation-done-button → run `await page.locator('[data-testid=\"today-hero-card\"]').count()` — expect 1, observed 2. To reproduce reminder bug: on Settings, tap [data-testid=\"reminder-switch\"], observe no time chips appear and switch resets. Clear localStorage before persistence tests. The reader flow is exactly 9 taps of reader-next-button to reach Appreciation (1 confession + 7 verses + 1 prayer). expo-notifications on web logs a benign warning about push tokens.",
+  "rca_of_issue": "DUPLICATE TABS: In expo-router, when the current route is a *pushed* Stack.Screen (reader/[date] was pushed via router.push from Today), calling router.replace('/(tabs)') on web replaces the CURRENT screen in the stack with a new (tabs) group navigator, while the previously mounted (tabs) group underneath the pushed reader remains mounted. Result: two (tabs) navigators, two Today screens, doubled testIDs. Fix: use router.back() (returns to the existing tabs group), OR router.dismissAll() then navigate. REMINDER SWITCH: applyReminder() unconditionally calls requestPermission() which on expo-notifications web build returns { status: 'undetermined'/false }, so ok===false triggers setReminderOn(false) + storage write false. Fix: branch on Platform.OS==='web' to skip permission/schedule and just persist state so UI (time chips) shows."
+}

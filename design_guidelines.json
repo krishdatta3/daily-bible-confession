@@ -1,0 +1,207 @@
+{
+  "app_name": "Daily Bible Confession / Daily Faith Declaration",
+  "personality": "3 Editorial Mobile (with Glass/Luxe infused full-screen moments)",
+  "personality_one_liner": "A calm, highly readable, and deeply spiritual reading experience that feels like a premium devotional journal, elevating scripture through elegant typography and soft radiant imagery.",
+  "color": {
+    "light": {
+      "surface": "#FAF9F6",
+      "onSurface": "#292524",
+      "surfaceSecondary": "#F3F2EE",
+      "onSurfaceSecondary": "#44403C",
+      "surfaceTertiary": "#E7E5DF",
+      "onSurfaceTertiary": "#292524",
+      "surfaceInverse": "#1C1917",
+      "onSurfaceInverse": "#FAF9F6",
+      "brand": "#D97706",
+      "brandPrimary": "#D97706",
+      "onBrandPrimary": "#FFFFFF",
+      "brandSecondary": "#B45309",
+      "onBrandSecondary": "#FFFFFF",
+      "brandTertiary": "#FEF3C7",
+      "onBrandTertiary": "#92400E",
+      "success": "#166534",
+      "onSuccess": "#FFFFFF",
+      "warning": "#CA8A04",
+      "onWarning": "#FFFFFF",
+      "error": "#991B1B",
+      "onError": "#FFFFFF",
+      "info": "#44403C",
+      "onInfo": "#FFFFFF",
+      "border": "#E7E5DF",
+      "borderStrong": "#D6D3D1",
+      "divider": "#E7E5DF"
+    },
+    "dark": {
+      "surface": "#1C1917",
+      "onSurface": "#F5F5F4",
+      "surfaceSecondary": "#292524",
+      "onSurfaceSecondary": "#D6D3D1",
+      "surfaceTertiary": "#44403C",
+      "onSurfaceTertiary": "#F5F5F4",
+      "surfaceInverse": "#FAF9F6",
+      "onSurfaceInverse": "#1C1917",
+      "brand": "#F59E0B",
+      "brandPrimary": "#F59E0B",
+      "onBrandPrimary": "#1C1917",
+      "brandSecondary": "#FCD34D",
+      "onBrandSecondary": "#1C1917",
+      "brandTertiary": "#78350F",
+      "onBrandTertiary": "#FDE68A",
+      "success": "#4ADE80",
+      "onSuccess": "#1C1917",
+      "warning": "#FBBF24",
+      "onWarning": "#1C1917",
+      "error": "#F87171",
+      "onError": "#1C1917",
+      "info": "#D6D3D1",
+      "onInfo": "#1C1917",
+      "border": "#44403C",
+      "borderStrong": "#57534E",
+      "divider": "#292524"
+    }
+  },
+  "typography": {
+    "displayFontFamily": "Playfair Display",
+    "textFontFamily": "DM Sans",
+    "scale": {
+      "sm": 12,
+      "base": 14,
+      "lg": 16,
+      "xl": 20,
+      "2xl": 24,
+      "3xl": 32
+    }
+  },
+  "spacing": {
+    "rule": "Generous editorial spacing. Give verses plenty of breathing room to avoid overwhelming elderly readers. Safe areas strictly respected.",
+    "xs": 4,
+    "sm": 8,
+    "md": 12,
+    "lg": 16,
+    "xl": 24,
+    "2xl": 32,
+    "3xl": 48
+  },
+  "radius_tokens": {
+    "sm": 6,
+    "md": 12,
+    "lg": 20,
+    "pill": 999
+  },
+  "shadow_tier": "0",
+  "navigation": "bottom_tabs",
+  "icon_set": "Feather",
+  "glassmorphism": {
+    "enabled": true,
+    "do's": [
+      "Use heavy glassmorphism over the verse background images to ensure the sticky 'Next Verse' CTA area is readable and premium.",
+      "Use glass headers when scrolling through long lists in the Calendar and Progress tabs."
+    ],
+    "dont's": [
+      "Don't use glassmorphism on the verse text itself (it must sit on a linear gradient scrim for maximum WCAG contrast)."
+    ]
+  },
+  "platform_libraries": {
+    "glass": {
+      "ios": "expo-glass-effect",
+      "android": "expo-blur",
+      "low_end_android_fallback": "solid surfaceSecondary"
+    },
+    "image": "expo-image",
+    "blur": "expo-blur",
+    "bottom_sheet": "@gorhom/bottom-sheet",
+    "animation": "react-native-reanimated",
+    "gesture": "react-native-gesture-handler"
+  },
+  "screens": [
+    {
+      "name": "Today Dashboard",
+      "purpose": "Home screen providing a calm entry point, showing today's date, a beautiful hero image, and a prominent CTA to start the daily confession.",
+      "states": {
+        "loading": "Centered soft spinner with 'Loading today's blessing...'",
+        "empty": "N/A - Calendar dates are pre-generated.",
+        "error": "Soft error message 'Could not load verses' with a Retry button."
+      },
+      "layout": "Editorial column layout. Top: Elegant 'Playfair Display' date heading. Center: Large hero card with `home_hero` image, a gradient scrim, and the 'Start Today's Confession' button inside the card. Bottom: A subtle 7-day horizontal dot/bar consistency tracker."
+    },
+    {
+      "name": "Verse Reader (Stack Screen)",
+      "purpose": "Immersive, full-screen, distraction-free reading experience for the 7 daily verses and the concluding prayer.",
+      "states": {
+        "loading": "Skeleton text over the background image.",
+        "empty": "N/A",
+        "error": "N/A"
+      },
+      "layout": "Full-screen absolute `expo-image` (using `verse_background_1`). OVERLAY: A vertical `expo-linear-gradient` scrim (transparent at 0%, 20% `surfaceInverse` at 40%, 85%+ `surfaceInverse` at 100%). Content sits in the bottom 50% of the screen. The verse text is `3xl` or `2xl` Playfair Display, centered, highly readable. A sticky, pill-shaped 'Next Verse' (अगला वचन) button sits in the safe area bottom. Transitions must be smooth cross-fades."
+    },
+    {
+      "name": "Appreciation & Achievements",
+      "purpose": "Celebrate completion of the daily reading, granting Faith Points and showing streak progress.",
+      "states": {
+        "loading": "N/A",
+        "empty": "N/A",
+        "error": "N/A"
+      },
+      "layout": "Warm, celebratory layout. Large 'बहुत अच्छा!' (Excellent!) heading in Playfair. A prominent circular badge showing earned Faith Points (+10). A large visual streak counter (e.g., 🔥 5 Days). A 'Done' or 'Back to Home' CTA sticky at the bottom."
+    },
+    {
+      "name": "Calendar",
+      "purpose": "Full-year history showing completed, missed, and upcoming days.",
+      "states": {
+        "loading": "Grid skeleton.",
+        "empty": "N/A",
+        "error": "Retry loading calendar data."
+      },
+      "layout": "Standard grid layout. Completed days: solid `brandTertiary` background with `brandPrimary` text. Missed/Past days: `surfaceSecondary`. Current Day: outlined with `borderStrong`. Tapping any day opens its Verse Reader stack."
+    },
+    {
+      "name": "Progress",
+      "purpose": "Gamification dashboard showcasing badges, Weekly Faith Champion status, and total Faith Points.",
+      "states": {
+        "loading": "Skeleton cards.",
+        "empty": "No badges earned yet. 'Start reading to unlock badges!' with an illustration.",
+        "error": "N/A"
+      },
+      "layout": "Two-column grid for badges, wrapped in `surfaceSecondary` cards. Top section shows a large total Faith Points counter and current Spiritual Growth certificate."
+    },
+    {
+      "name": "Settings",
+      "purpose": "Manage app preferences like Language (Hindi/English), Theme (Light/Dark), and Reminders.",
+      "states": {
+        "loading": "N/A",
+        "empty": "N/A",
+        "error": "N/A"
+      },
+      "layout": "Editorial list layout. Settings rows with a `brandTertiary` tinted icon container on the left, title, and a toggle/chevron on the right."
+    }
+  ],
+  "images": {
+    "home_hero": {
+      "url": "https://images.unsplash.com/photo-1497621122273-f5cfb6065c56?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjA1NTN8MHwxfHNlYXJjaHwxfHxob2x5JTIwYmlibGUlMjBvcGVuZWQlMjBhZXN0aGV0aWN8ZW58MHx8fHwxNzg2Nzg4OTcxfDA&ixlib=rb-4.1.0&q=85",
+      "alt": "Open Bible aesthetic"
+    },
+    "verse_background_1": {
+      "url": "https://images.unsplash.com/photo-1759240837736-29a76e7e5076?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjA2ODl8MHwxfHNlYXJjaHwzfHxzdW5yaXNlJTIwbGlnaHQlMjByYXlzJTIwc29mdCUyMGFlc3RoZXRpY3xlbnwwfHx8fDE3ODY3ODg5NzF8MA&ixlib=rb-4.1.0&q=85",
+      "dark": "https://images.unsplash.com/photo-1450558415837-1f5e21a17709?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NDQ2NDF8MHwxfHNlYXJjaHwxfHxjaHJpc3RpYW4lMjBjcm9zcyUyMHNpbGhvdWV0dGUlMjBzdW5zZXR8ZW58MHx8fHwxNzg2Nzg4OTcxfDA&ixlib=rb-4.1.0&q=85",
+      "alt": "Soft sunrise light rays and cross silhouette"
+    }
+  },
+  "haptics": {
+    "events": {
+      "next_verse": "light",
+      "daily_completion": "success",
+      "tab_press": "selection",
+      "setting_toggle": "light"
+    }
+  },
+  "instructions_to_main_agent": [
+    "Strictly follow the color palette provided. Absolutely NO indigo, violet, purple, or blue gradients anywhere. Use the warm amber and warm stone palette.",
+    "For the full-screen Verse Reader: You MUST implement the gradient scrim pattern correctly. The `expo-linear-gradient` must overlay the image and fade from transparent at the top to a very heavy (85%+) `surfaceInverse` at the bottom. The verse text and 'Next Verse' CTA must sit in the bottom half of the screen on top of this darkest part of the scrim to guarantee readability for elderly users.",
+    "Ensure Playfair Display is used for the verse text and headings, at large, readable sizes (xl, 2xl).",
+    "Make the 'Next Verse' (अगला वचन) button large and easily tappable (min 56pt height).",
+    "The App requires Hindi and English support (Hindi default). Add a simple Language context/state.",
+    "Transitions between the 7 verses should feel smooth and cinematic (e.g., fade through), rather than a jarring screen push.",
+    "On the Calendar screen, do not use complex libraries unless needed. A simple grid layout with day blocks is preferred. Visually differentiate completed days (brand background) vs missed days.",
+    "In the Progress tab, display gamification elements (Faith Points, Badges) cleanly. Ensure positive, celebratory reinforcement without aggressive gaming visuals."
+  ]
+}
