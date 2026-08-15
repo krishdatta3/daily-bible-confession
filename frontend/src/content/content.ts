@@ -4,31 +4,10 @@
 // generates a unique-feeling plan for every day of the year (offline).
 
 import { dayOfYear } from "@/src/utils/date";
+import { Bilingual, DayContent, DayVerse, ThemeKey, Verse } from "./types";
+import { EXTRA_VERSES, SPECIAL_DAYS } from "./special";
 
-export type ThemeKey =
-  | "faith"
-  | "blessing"
-  | "healing"
-  | "protection"
-  | "victory"
-  | "grace"
-  | "love";
-
-export interface Verse {
-  ref: { hi: string; en: string };
-  hi: string;
-  en: string;
-}
-
-export interface DayVerse extends Verse {
-  theme: ThemeKey;
-}
-
-export interface Bilingual {
-  hi: string;
-  en: string;
-}
-
+export type { ThemeKey, Verse, DayVerse, Bilingual, DayContent } from "./types";
 export const THEME_LABELS: Record<ThemeKey, Bilingual> = {
   faith: { hi: "विश्वास", en: "Faith" },
   blessing: { hi: "आशीष", en: "Blessing" },
@@ -150,18 +129,34 @@ const ENCOURAGEMENTS: Bilingual[] = [
   { hi: "परमेश्वर की प्रतिज्ञाएँ हाँ और आमीन हैं। थामे रह, तेरा आशीर्वाद आ रहा है।", en: "God's promises are yes and amen. Hold on—your blessing is on the way." },
 ];
 
-export interface DayContent {
-  verses: DayVerse[];
-  confession: Bilingual;
-  prayer: Bilingual;
-  encouragement: Bilingual;
+// Deepen each theme pool with hand-picked extra verses for year-long variety.
+for (const theme of THEME_ORDER) {
+  VERSES[theme] = [...VERSES[theme], ...EXTRA_VERSES[theme]];
 }
 
 function pick<T>(arr: T[], index: number): T {
   return arr[((index % arr.length) + arr.length) % arr.length];
 }
 
+function mmdd(date: Date): string {
+  const m = String(date.getMonth() + 1).padStart(2, "0");
+  const d = String(date.getDate()).padStart(2, "0");
+  return `${m}-${d}`;
+}
+
 export function getDayContent(date: Date): DayContent {
+  // Curated special day (holidays) overrides the generated plan.
+  const special = SPECIAL_DAYS[mmdd(date)];
+  if (special) {
+    return {
+      verses: special.verses,
+      confession: special.confession,
+      prayer: special.prayer,
+      encouragement: special.encouragement,
+      special: special.title,
+    };
+  }
+
   const doy = dayOfYear(date);
   const verses: DayVerse[] = THEME_ORDER.map((theme, i) => {
     const pool = VERSES[theme];

@@ -51,13 +51,27 @@ theme, elegant typography, premium look, easy for elderly.
 - Testing agent iteration_1: ~85% pass; 2 bugs found & FIXED:
   1) duplicate `(tabs)` mount after appreciation (router.replace → router.back) — verified single mount.
   2) reminder switch on web (added `Platform.OS === 'web'` guard).
+- Testing agent iteration_2: ALL PASS (backend 8/8 pytest + full frontend). No new bugs.
+
+## Iteration 2 (2026-08-15) — 4 new features
+- **Verse Sharing**: share current verse/confession/prayer as a premium amber image-card
+  (`src/components/ShareCard.tsx` + react-native-view-shot + expo-sharing). Web shows graceful toast.
+- **Audio Narration**: Listen button in reader plays verse/prayer via OpenAI TTS.
+  Backend `POST /api/tts` (caches mp3 by sha256) + `GET /api/tts/{key}.mp3` (FileResponse). Uses EMERGENT_LLM_KEY,
+  model tts-1, voice onyx. Frontend module-level expo-audio player (`src/utils/narration.ts`).
+  Note: OpenAI voices read Hindi with a slight English accent (provider ceiling). Needs internet.
+- **Fuller Content**: deepened every theme pool with extra hand-picked verses + curated SPECIAL DAYS
+  (01-01 New Year, 12-24 Christmas Eve, 12-25 Christmas, 12-31 Year End) with own verses/prayer + special badge
+  (`src/content/special.ts`, `src/content/types.ts`).
+- **Prayer Journal**: new 5th tab `जर्नल` — add/edit/delete prayer & thanksgiving notes, persisted locally
+  (`src/context/JournalContext.tsx`, `app/(tabs)/journal.tsx`). Toast feedback (`src/components/Toast.tsx`).
 
 ## Backlog / Future
-- P1: Verse-level bookmarking & sharing (share verse card image).
-- P1: Audio narration of verses (Emergent OpenAI TTS).
-- P2: Expand hand-authored verse content beyond pooled composition; per-day custom themes.
-- P2: Weekly Faith Champion leaderboard / shareable monthly certificate export.
-- P2: Reminder custom time picker (any time), multiple reminders.
+- P1: Verse-level bookmarking / favourites.
+- P2: ElevenLabs multilingual voice for natural Hindi narration (if OpenAI accent unsatisfactory).
+- P2: Journal reminders / mood tags; export journal.
+- P2: Expand special days (Easter/Good Friday — movable dates), weekly leaderboard.
+- P2: Backend TTS cache size cap; migrate remaining RN-web shadow*/pointerEvents props.
 
 ## Next Tasks
-- On user request: enable push/local reminder verification on a real build; add verse sharing; add audio narration.
+- On user request: bookmarking, natural Hindi voice (ElevenLabs), journal export, more special days.

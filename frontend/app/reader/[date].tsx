@@ -1,16 +1,34 @@
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { Feather } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
 import { StatusBar } from "expo-status-bar";
 import * as Haptics from "expo-haptics";
-import { Animated, Pressable, StyleSheet, Text, View } from "react-native";
+import * as Sharing from "expo-sharing";
+import { captureRef } from "react-native-view-shot";
+import {
+  ActivityIndicator,
+  Animated,
+  Platform,
+  Pressable,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { useTheme } from "@/src/theme/ThemeContext";
 import { useLanguage } from "@/src/i18n/LanguageContext";
 import { useProgress, POINTS_PER_DAY } from "@/src/context/ProgressContext";
+import { useToast } from "@/src/components/Toast";
+import { ShareCard } from "@/src/components/ShareCard";
+import {
+  NarrationState,
+  narrate,
+  stopNarration,
+  subscribeNarration,
+} from "@/src/utils/narration";
 import { fonts, radius, spacing } from "@/src/theme/colors";
 import { IMAGES } from "@/src/theme/images";
 import { fromDateKey } from "@/src/utils/date";
@@ -32,6 +50,21 @@ export default function ReaderScreen() {
   const { markComplete, currentStreak } = useProgress();
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const { showToast } = useToast();
+  const cardRef = useRef<View>(null);
+  const [narr, setNarr] = useState<NarrationState>({
+    loading: false,
+    playing: false,
+    id: null,
+  });
+
+  useEffect(() => {
+    const unsub = subscribeNarration(setNarr);
+    return () => {
+      unsub();
+      stopNarration();
+    };
+  }, []);
 
   const content = useMemo(() => getDayContent(fromDateKey(date)), [date]);
 
@@ -53,6 +86,7 @@ export default function ReaderScreen() {
   const bgUri = isDark ? IMAGES.verseBackgroundDark : IMAGES.verseBackgroundLight;
 
   const finish = () => {
+    stopNarration();
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     markComplete(date);
     setShowAppreciation(true);
@@ -63,6 +97,7 @@ export default function ReaderScreen() {
       finish();
       return;
     }
+    stopNarration();
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     Animated.timing(opacity, { toValue: 0, duration: 200, useNativeDriver: true }).start(() => {
       setIndex((i) => i + 1);
@@ -94,6 +129,48 @@ export default function ReaderScreen() {
         ? t("finish")
         : t("amen_continue");
 
+  const shareText =
+    step.kind === "verse"
+      ? step.verse[lang]
+      : step.kind === "confession"
+        ? content.confession[lang]
+        : content.prayer[lang];
+  const shareReference = step.kind === "verse" ? step.verse.ref[lang] : undefined;
+  const shareLabel =
+    step.kind === "verse"
+      ? THEME_LABELS[step.verse.theme][lang]
+      : step.kind === "confession"
+        ? t("declaration")
+        : t("todays_prayer");
+  const currentId = `s${index}`;
+  const isBusy = narr.id === currentId && (narr.loading || narr.playing);
+
+  const onListen = async () => {
+    Haptics.selectionAsync();
+    try {
+      await narrate(currentId, shareText);
+    } catch {
+      showToast(t("narration_error"), "error");
+    }
+  };
+
+  const onShare = async () => {
+    try {
+      const available = Platform.OS !== "web" && (await Sharing.isAvailableAsync());
+      if (!available) {
+        showToast(t("share_unavailable"), "info");
+        return;
+      }
+      const uri = await captureRef(cardRef, { format: "png", quality: 1 });
+      await Sharing.shareAsync(uri, {
+        mimeType: "image/png",
+        dialogTitle: t("share_verse"),
+      });
+    } catch {
+      showToast(t("share_error"), "error");
+    }
+  };
+
   return (
     <View style={styles.root}>
       <StatusBar style="light" />
@@ -120,7 +197,42 @@ export default function ReaderScreen() {
             />
           ))}
         </View>
+        <Pressable
+          testID="reader-listen-button"
+          onPress={onListen}
+          hitSlop={10}
+          style={styles.iconBtn}
+        >
+          {isBusy && narr.loading ? (
+            <ActivityIndicator size="small" color="#FAF9F6" />
+          ) : (
+            <Feather
+              name={isBusy && narr.playing ? "pause" : "volume-2"}
+              size={22}
+              color="#FAF9F6"
+            />
+          )}
+        </Pressable>
+        <Pressable
+          testID="reader-share-button"
+          onPress={onShare}
+          hitSlop={10}
+          style={styles.iconBtn}
+        >
+          <Feather name="share-2" size={21} color="#FAF9F6" />
+        </Pressable>
       </View>
+
+      {content.special && (
+        <View style={styles.specialWrap} pointerEvents="none">
+          <View style={[styles.specialChip, { backgroundColor: colors.brandSecondary }]}>
+            <Feather name="star" size={12} color={colors.onBrandSecondary} />
+            <Text style={[styles.specialText, { color: colors.onBrandSecondary }]}>
+              {content.special[lang]}
+            </Text>
+          </View>
+        </View>
+      )}
 
       {/* Content */}
       <View style={[styles.content, { paddingBottom: insets.bottom + spacing.lg }]}>
@@ -182,6 +294,16 @@ export default function ReaderScreen() {
             color={colors.onBrandPrimary}
           />
         </Pressable>
+      </View>
+
+      <View style={styles.offscreen} pointerEvents="none">
+        <ShareCard
+          ref={cardRef}
+          text={shareText}
+          reference={shareReference}
+          label={shareLabel}
+          appName={t("app_name")}
+        />
       </View>
     </View>
   );
@@ -263,8 +385,20 @@ const styles = StyleSheet.create({
     gap: spacing.md,
   },
   closeBtn: { padding: 4 },
+  iconBtn: { padding: 4 },
   progressRow: { flex: 1, flexDirection: "row", gap: 5 },
   progressSeg: { flex: 1, height: 4, borderRadius: 2 },
+  specialWrap: { alignItems: "center", marginTop: spacing.md },
+  specialChip: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 5,
+    paddingHorizontal: spacing.md,
+    paddingVertical: 6,
+    borderRadius: radius.pill,
+  },
+  specialText: { fontFamily: fonts.textBold, fontSize: 12 },
+  offscreen: { position: "absolute", left: -9999, top: -9999 },
   content: {
     flex: 1,
     justifyContent: "flex-end",

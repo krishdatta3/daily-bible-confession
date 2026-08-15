@@ -88,6 +88,29 @@ const STRINGS: Dict = {
   badge_devoted_desc: { hi: "15 दिन पूरे किए", en: "Completed 15 days" },
   badge_pillar: { hi: "विश्वास का स्तंभ", en: "Pillar of Faith" },
   badge_pillar_desc: { hi: "30 दिन पूरे किए", en: "Completed 30 days" },
+  // Tab 5 - Journal
+  tab_journal: { hi: "जर्नल", en: "Journal" },
+  journal_title: { hi: "प्रार्थना जर्नल", en: "Prayer Journal" },
+  journal_subtitle: { hi: "अपनी प्रार्थना व धन्यवाद लिखें", en: "Write your prayers & thanksgiving" },
+  journal_empty: { hi: "अभी कोई प्रविष्टि नहीं। नीचे '+' दबाकर अपनी पहली प्रार्थना लिखें।", en: "No entries yet. Tap '+' below to write your first prayer." },
+  journal_new: { hi: "नई प्रविष्टि", en: "New Entry" },
+  journal_edit: { hi: "प्रविष्टि संपादित करें", en: "Edit Entry" },
+  journal_type_prayer: { hi: "प्रार्थना", en: "Prayer" },
+  journal_type_thanks: { hi: "धन्यवाद", en: "Thanksgiving" },
+  journal_placeholder: { hi: "यहाँ अपने मन की बात लिखें...", en: "Write what's on your heart..." },
+  journal_save: { hi: "सहेजें", en: "Save" },
+  journal_cancel: { hi: "रद्द करें", en: "Cancel" },
+  journal_delete: { hi: "हटाएँ", en: "Delete" },
+  journal_saved: { hi: "प्रविष्टि सहेजी गई 🙏", en: "Entry saved 🙏" },
+  journal_deleted: { hi: "प्रविष्टि हटाई गई", en: "Entry deleted" },
+  journal_empty_text: { hi: "कृपया कुछ लिखें", en: "Please write something" },
+  // Narration & Share
+  listen: { hi: "सुनें", en: "Listen" },
+  narration_error: { hi: "आवाज़ लोड नहीं हो सकी। कृपया इंटरनेट जाँचें।", en: "Could not load audio. Please check your internet." },
+  share_verse: { hi: "वचन शेयर करें", en: "Share Verse" },
+  share_unavailable: { hi: "इस डिवाइस पर शेयर उपलब्ध नहीं है", en: "Sharing is not available on this device" },
+  share_error: { hi: "शेयर नहीं हो सका", en: "Could not share" },
+  special_badge: { hi: "विशेष दिन", en: "Special Day" },
 };
 
 interface LanguageContextValue {

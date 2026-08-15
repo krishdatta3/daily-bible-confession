@@ -10,6 +10,8 @@ import { useIconFonts } from "@/src/hooks/use-icon-fonts";
 import { ThemeProvider } from "@/src/theme/ThemeContext";
 import { LanguageProvider } from "@/src/i18n/LanguageContext";
 import { ProgressProvider } from "@/src/context/ProgressContext";
+import { JournalProvider } from "@/src/context/JournalContext";
+import { ToastProvider } from "@/src/components/Toast";
 
 // Disable logbox errors etc so that users can see the app
 // and agent works as expected.
@@ -48,13 +50,17 @@ export default function RootLayout() {
         <ThemeProvider>
           <LanguageProvider>
             <ProgressProvider>
-              <Stack screenOptions={{ headerShown: false }}>
-                <Stack.Screen name="(tabs)" />
-                <Stack.Screen
-                  name="reader/[date]"
-                  options={{ animation: "fade" }}
-                />
-              </Stack>
+              <JournalProvider>
+                <ToastProvider>
+                  <Stack screenOptions={{ headerShown: false }}>
+                    <Stack.Screen name="(tabs)" />
+                    <Stack.Screen
+                      name="reader/[date]"
+                      options={{ animation: "fade" }}
+                    />
+                  </Stack>
+                </ToastProvider>
+              </JournalProvider>
             </ProgressProvider>
           </LanguageProvider>
         </ThemeProvider>

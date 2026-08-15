@@ -1,0 +1,40 @@
+{
+  "summary": "Iteration 2 testing complete — BACKEND (TTS) and FRONTEND (Journal + Reader Listen/Share + Special Day) all pass. Backend: 8/8 pytest cases green — POST /api/tts returns {url:'/api/tts/<sha256>.mp3'} in ~1s, GET returns 200 with Content-Type audio/mpeg and non-zero body (>1KB), identical text produces identical cache key (cache hit), empty and whitespace-only text return 400, unknown key returns 404, English text also works. Frontend (390x844 mobile, default Hindi): 5th 'जर्नल' tab renders correctly with book-open icon; empty-state shows on first visit; journal-add-button opens bottom-sheet modal with journal-type-prayer / journal-type-thanks toggle, journal-input (multiline), journal-save-button; adding an entry shows 'प्रविष्टि सहेजी गई' success toast and the entry appears with a type tag (धन्यवाद/अंगीकार) and long date; entries persist across a hard reload; tapping the entry card pre-fills text/type, journal-save-button updates it, journal-delete-button removes it. Reader top bar shows reader-listen-button and reader-share-button on every step (verified on confession + first verse). Tapping reader-listen-button fires POST https://<host>/api/tts and then GETs the returned mp3 (both 200) — icon flips from volume-2 to pause while playing, no red screen. Tapping reader-share-button on web shows the fallback toast 'इस डिवाइस पर शेयर उपलब्ध नहीं है' (share_unavailable) and does not crash — reader-close-button still visible after tap. No new deprecated-package issues (expo-av not used; expo-audio + expo-video / expo-camera stack is current). Iteration-1 fixes (router.back on appreciation done, and reminder web guard) are in place in reader/[date].tsx.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "Web console (informational only)", "issues": ["Recurring warnings from RN-web: 'shadow* style props are deprecated. Use boxShadow', 'props.pointerEvents is deprecated. Use style.pointerEvents', 'Animated: useNativeDriver is not supported ... Falling back to JS-based animation'. All originate from RN 0.x web shim + third-party libs; do not affect functionality but clutter the console.", "'[expo-notifications] Listening to push token changes is not yet fully supported on web' — expected on web preview."]}
+    ],
+    "react_native_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_tts.py",
+    "/app/test_reports/pytest/pytest_results.xml"
+  ],
+  "action_items": [
+    "(Optional polish) Silence RN-web console warnings by migrating remaining 'shadow*' styles to boxShadow and 'pointerEvents' prop to style.pointerEvents in local components; gate Animated useNativeDriver with Platform.OS !== 'web' for the reader crossfade/translate to remove the JS-fallback warning.",
+    "(Optional) Add a unit-level check that getDayContent('2026-12-25') returns SPECIAL_DAYS['12-25'] with content.special set — verified via code review of /app/frontend/src/content/special.ts and reader/[date].tsx (special chip renders when content.special truthy), not exercised through UI in this run because it requires navigating Calendar to Dec 25 which is disabled for future dates in this app."
+  ],
+  "critical_code_review_comments": [
+    "backend/server.py:71 constructs OpenAITextToSpeech at import time using EMERGENT_LLM_KEY — if the env var were missing the module would fail to import and crash the whole app; ok in this env but consider a lazy init + graceful 503 for portability.",
+    "backend/server.py:111 references `logger` inside the except block, but `logger` is defined AFTER `app.include_router(...)` (line 139). Import-time this works because the function body is only executed on request, but logically it is fragile — hoist logging.basicConfig / logger above the TTS route.",
+    "backend/server.py has no size limit / rate-limit on POST /api/tts — a client could enumerate distinct text and fill TTS_CACHE. Consider adding an on-disk LRU cap.",
+    "frontend/src/utils/narration.ts uses process.env.EXPO_PUBLIC_BACKEND_URL directly; falls silently to 'undefined/api/tts' if the var is missing. A one-line guard + user-visible toast would be safer.",
+    "reader/[date].tsx: onListen catches errors but only after narrate() rejects — the narration state is already reset inside narrate on error; UX is fine, just noting redundancy."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_tts.py (new)",
+    "/app/test_reports/iteration_2.json (new)"
+  ],
+  "success_rate": {"backend": "100% (8/8)", "frontend": "100% (all targeted flows: journal add/edit/delete/persist, reader listen network + icon toggle, reader share web fallback toast)"},
+  "seed_data_creation": "One 'TEST_ENTRY_1' journal entry created during UI run and then deleted; localStorage cleared at the start to guarantee empty-state check. TTS cache now contains a few generated mp3 files under /app/backend/tts_cache/.",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Public URL: https://bible-confession-app.preview.emergentagent.com — mobile viewport 390x844, default Hindi. Backend TTS tests live at /app/backend/tests/test_tts.py — reusable regression suite (run: pytest backend/tests/test_tts.py -v). All iteration-2 acceptance criteria met. If retesting the special-day flow, temporarily change device date or override getDayContent(new Date('2026-12-25')) — Calendar UI blocks navigation to future dates so it can only be exercised via code or by shipping a debug entry point.",
+  "rca_of_issue": "N/A — no new bugs found in iteration 2."
+}
