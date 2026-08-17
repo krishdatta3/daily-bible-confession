@@ -88,3 +88,15 @@ theme, elegant typography, premium look, easy for elderly.
   `ELEVENLABS_API_KEY` is set (env placeholder empty for now → OpenAI `tts-1` remains the active fallback).
   User can paste their ElevenLabs key (+ optional `ELEVENLABS_VOICE_ID`) in .env / deployment secrets to activate.
 - Testing agent iteration_3: ALL PASS (backend 8/8 + full frontend). No blocking bugs.
+
+## Iteration 4 (2026-08-17) — Gemini AI (all three features)
+- Model **gemini-3-flash-preview** via emergentintegrations + EMERGENT_LLM_KEY; replies in user's chosen language.
+- Backend endpoints (in server.py): `POST /api/ai/confession` (first-person confession + prayer + reference),
+  `POST /api/ai/reflection` (short devotional for a verse), `POST /api/ai/chat` (multi-turn faith assistant,
+  history replayed client-side). All non-streaming `send_message` for mobile robustness.
+- Frontend:
+  - `/app/generate.tsx` — Personal Confession Generator (user types a situation → AI confession + prayer). Entry: Today "AI आत्मिक सहायता" `ai-generate-card`.
+  - `/app/assistant.tsx` — Faith Chat Assistant (multi-turn, pastoral, Bible-grounded). Entry: Today `ai-assistant-card`.
+  - Reader `reader-reflect-button` (zap) on verse steps → bottom modal "आज का मनन" with AI reflection.
+  - `src/utils/ai.ts` helpers. New i18n strings. Requires internet (rest of app stays offline).
+- Testing agent iteration_4: ALL PASS (backend 8/8 + full frontend). No blocking bugs. Deployment health check: PASS.

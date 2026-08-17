@@ -171,6 +171,45 @@ export default function TodayScreen() {
             </Text>
           </View>
         </View>
+
+        {/* AI spiritual help */}
+        <Text style={[styles.sectionLabel, { color: colors.onSurfaceSecondary }]}>
+          {t("ai_help")}
+        </Text>
+        <Pressable
+          testID="ai-generate-card"
+          onPress={() => {
+            Haptics.selectionAsync();
+            router.push("/generate");
+          }}
+          style={[styles.aiCard, { backgroundColor: colors.surfaceSecondary }]}
+        >
+          <View style={[styles.aiIcon, { backgroundColor: colors.brandTertiary }]}>
+            <Feather name="feather" size={20} color={colors.onBrandTertiary} />
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={[styles.aiTitle, { color: colors.onSurface }]}>{t("gen_card_title")}</Text>
+            <Text style={[styles.aiDesc, { color: colors.onSurfaceSecondary }]}>{t("gen_card_desc")}</Text>
+          </View>
+          <Feather name="chevron-right" size={22} color={colors.onSurfaceSecondary} />
+        </Pressable>
+        <Pressable
+          testID="ai-assistant-card"
+          onPress={() => {
+            Haptics.selectionAsync();
+            router.push("/assistant");
+          }}
+          style={[styles.aiCard, { backgroundColor: colors.surfaceSecondary, marginTop: spacing.md }]}
+        >
+          <View style={[styles.aiIcon, { backgroundColor: colors.brandTertiary }]}>
+            <Feather name="message-circle" size={20} color={colors.onBrandTertiary} />
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={[styles.aiTitle, { color: colors.onSurface }]}>{t("assistant_card_title")}</Text>
+            <Text style={[styles.aiDesc, { color: colors.onSurfaceSecondary }]}>{t("assistant_card_desc")}</Text>
+          </View>
+          <Feather name="chevron-right" size={22} color={colors.onSurfaceSecondary} />
+        </Pressable>
       </ScrollView>
     </View>
   );
@@ -267,4 +306,20 @@ const styles = StyleSheet.create({
   },
   statValue: { fontFamily: fonts.displayBold, fontSize: 28 },
   statLabel: { fontFamily: fonts.textRegular, fontSize: 12 },
+  aiCard: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.md,
+    borderRadius: radius.lg,
+    padding: spacing.lg,
+  },
+  aiIcon: {
+    width: 44,
+    height: 44,
+    borderRadius: radius.md,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  aiTitle: { fontFamily: fonts.textBold, fontSize: 15 },
+  aiDesc: { fontFamily: fonts.textRegular, fontSize: 12, marginTop: 2 },
 });

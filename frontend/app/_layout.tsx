@@ -64,6 +64,14 @@ export default function RootLayout() {
                         name="favourites"
                         options={{ animation: "slide_from_right" }}
                       />
+                      <Stack.Screen
+                        name="generate"
+                        options={{ animation: "slide_from_right" }}
+                      />
+                      <Stack.Screen
+                        name="assistant"
+                        options={{ animation: "slide_from_right" }}
+                      />
                     </Stack>
                   </ToastProvider>
                 </FavouritesProvider>

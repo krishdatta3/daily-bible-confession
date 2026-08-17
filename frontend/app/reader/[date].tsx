@@ -10,6 +10,7 @@ import { captureRef } from "react-native-view-shot";
 import {
   ActivityIndicator,
   Animated,
+  Modal,
   Platform,
   Pressable,
   StyleSheet,
@@ -24,6 +25,7 @@ import { useProgress, POINTS_PER_DAY } from "@/src/context/ProgressContext";
 import { useFavourites, favId } from "@/src/context/FavouritesContext";
 import { useToast } from "@/src/components/Toast";
 import { ShareCard } from "@/src/components/ShareCard";
+import { getReflection } from "@/src/utils/ai";
 import {
   NarrationState,
   narrate,
@@ -67,6 +69,10 @@ export default function ReaderScreen() {
       stopNarration();
     };
   }, []);
+
+  const [reflectOpen, setReflectOpen] = useState(false);
+  const [reflectLoading, setReflectLoading] = useState(false);
+  const [reflectText, setReflectText] = useState("");
 
   const content = useMemo(() => getDayContent(fromDateKey(date)), [date]);
 
@@ -182,6 +188,22 @@ export default function ReaderScreen() {
     showToast(added ? t("fav_added") : t("fav_removed"), added ? "success" : "info");
   };
 
+  const onReflect = async () => {
+    if (step.kind !== "verse") return;
+    Haptics.selectionAsync();
+    setReflectOpen(true);
+    setReflectLoading(true);
+    setReflectText("");
+    try {
+      const { reflection } = await getReflection(step.verse[lang], step.verse.ref[lang], lang);
+      setReflectText(reflection);
+    } catch {
+      setReflectText(t("ai_error"));
+    } finally {
+      setReflectLoading(false);
+    }
+  };
+
   return (
     <View style={styles.root}>
       <StatusBar style="light" />
@@ -236,6 +258,16 @@ export default function ReaderScreen() {
               size={21}
               color={favActive ? colors.brandPrimary : "#FAF9F6"}
             />
+          </Pressable>
+        )}
+        {step.kind === "verse" && (
+          <Pressable
+            testID="reader-reflect-button"
+            onPress={onReflect}
+            hitSlop={10}
+            style={styles.iconBtn}
+          >
+            <Feather name="zap" size={21} color="#FAF9F6" />
           </Pressable>
         )}
         <Pressable
@@ -330,6 +362,39 @@ export default function ReaderScreen() {
           appName={t("app_name")}
         />
       </View>
+
+      <Modal
+        visible={reflectOpen}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setReflectOpen(false)}
+      >
+        <Pressable style={styles.reflectBackdrop} onPress={() => setReflectOpen(false)} />
+        <View
+          style={[
+            styles.reflectSheet,
+            { backgroundColor: colors.surface, paddingBottom: insets.bottom + spacing.xl },
+          ]}
+        >
+          <View style={styles.reflectHandle} />
+          <View style={styles.reflectTitleRow}>
+            <Feather name="zap" size={18} color={colors.brandPrimary} />
+            <Text style={[styles.reflectTitle, { color: colors.onSurface }]}>
+              {t("reflect_title")}
+            </Text>
+          </View>
+          {reflectLoading ? (
+            <View style={styles.reflectLoading}>
+              <ActivityIndicator color={colors.brandPrimary} />
+            </View>
+          ) : (
+            <Text style={[styles.reflectText, { color: colors.onSurface }]}>{reflectText}</Text>
+          )}
+          <Text style={[styles.reflectNote, { color: colors.onSurfaceSecondary }]}>
+            {t("ai_online_note")}
+          </Text>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -424,6 +489,29 @@ const styles = StyleSheet.create({
   },
   specialText: { fontFamily: fonts.textBold, fontSize: 12 },
   offscreen: { position: "absolute", left: -9999, top: -9999 },
+  reflectBackdrop: { ...StyleSheet.absoluteFillObject, backgroundColor: "rgba(0,0,0,0.6)" },
+  reflectSheet: {
+    position: "absolute",
+    bottom: 0,
+    left: 0,
+    right: 0,
+    borderTopLeftRadius: radius.lg,
+    borderTopRightRadius: radius.lg,
+    padding: spacing.xl,
+  },
+  reflectHandle: {
+    width: 40,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: "rgba(120,120,120,0.4)",
+    alignSelf: "center",
+    marginBottom: spacing.lg,
+  },
+  reflectTitleRow: { flexDirection: "row", alignItems: "center", gap: spacing.sm, marginBottom: spacing.md },
+  reflectTitle: { fontFamily: fonts.displaySemiBold, fontSize: 19 },
+  reflectLoading: { paddingVertical: spacing["2xl"], alignItems: "center" },
+  reflectText: { fontFamily: fonts.textRegular, fontSize: 17, lineHeight: 27 },
+  reflectNote: { fontFamily: fonts.textRegular, fontSize: 12, marginTop: spacing.lg },
   content: {
     flex: 1,
     justifyContent: "flex-end",

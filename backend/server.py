@@ -188,6 +188,141 @@ async def get_tts(key: str, ext: str):
         raise HTTPException(status_code=404, detail="Audio not found")
     return FileResponse(str(path), media_type="audio/mpeg")
 
+
+# ---------------------------------------------------------------------------
+# Gemini AI features (Emergent universal key) — confession generator,
+# verse reflection, and a faith chat assistant.
+# ---------------------------------------------------------------------------
+from emergentintegrations.llm.chat import LlmChat, UserMessage
+
+GEMINI_MODEL = "gemini-3-flash-preview"
+
+
+def _lang_name(lang: str) -> str:
+    return "Hindi" if (lang or "hi").startswith("hi") else "English"
+
+
+def _new_chat(session_id: str, system_message: str) -> LlmChat:
+    return LlmChat(
+        api_key=os.environ["EMERGENT_LLM_KEY"],
+        session_id=session_id,
+        system_message=system_message,
+    ).with_model("gemini", GEMINI_MODEL)
+
+
+def _extract_json(text: str) -> dict:
+    import json
+    t = text.strip()
+    t = re.sub(r"^```(?:json)?", "", t).strip()
+    t = re.sub(r"```$", "", t).strip()
+    start = t.find("{")
+    end = t.rfind("}")
+    if start != -1 and end != -1 and end > start:
+        t = t[start : end + 1]
+    return json.loads(t)
+
+
+class ConfessionRequest(BaseModel):
+    situation: str
+    lang: str = "hi"
+
+
+@api_router.post("/ai/confession")
+async def ai_confession(req: ConfessionRequest):
+    situation = (req.situation or "").strip()
+    if not situation:
+        raise HTTPException(status_code=400, detail="Empty situation")
+    lang = _lang_name(req.lang)
+    system = (
+        f"You are a warm Christian faith coach. The user shares a life situation. "
+        f"Respond ENTIRELY in {lang}. Create a short FIRST-PERSON biblical confession "
+        f"(a personal declaration that begins with the equivalent of 'I' / 'मैं'), "
+        f"grounded in Scripture and full of hope, plus a short heartfelt PRAYER (2-3 sentences). "
+        f"Return STRICT JSON only, no markdown, with exactly these keys: "
+        f'{{"confession": "...", "prayer": "...", "reference": "Book chapter:verse"}}.'
+    )
+    chat = _new_chat(f"conf-{uuid.uuid4().hex[:8]}", system)
+    try:
+        resp = await chat.send_message(UserMessage(text=situation))
+        data = _extract_json(resp)
+        return {
+            "confession": str(data.get("confession", "")).strip(),
+            "prayer": str(data.get("prayer", "")).strip(),
+            "reference": str(data.get("reference", "")).strip(),
+        }
+    except Exception as e:
+        logger.error(f"AI confession failed: {e}")
+        raise HTTPException(status_code=502, detail="AI generation failed")
+
+
+class ReflectionRequest(BaseModel):
+    verse: str
+    reference: str = ""
+    lang: str = "hi"
+
+
+@api_router.post("/ai/reflection")
+async def ai_reflection(req: ReflectionRequest):
+    verse = (req.verse or "").strip()
+    if not verse:
+        raise HTTPException(status_code=400, detail="Empty verse")
+    lang = _lang_name(req.lang)
+    system = (
+        f"You are a warm Christian devotional writer. Write ENTIRELY in {lang}. "
+        f"Given a Bible verse (phrased as a personal confession) and its reference, write a short, "
+        f"uplifting devotional reflection of 2-3 sentences (about 45-60 words) that encourages the "
+        f"reader personally and helps them apply it today. Output ONLY the reflection text, no preamble, no quotes."
+    )
+    chat = _new_chat(f"refl-{uuid.uuid4().hex[:8]}", system)
+    try:
+        prompt = f'Verse: "{verse}"\nReference: {req.reference}'
+        resp = await chat.send_message(UserMessage(text=prompt))
+        return {"reflection": resp.strip()}
+    except Exception as e:
+        logger.error(f"AI reflection failed: {e}")
+        raise HTTPException(status_code=502, detail="AI generation failed")
+
+
+class ChatTurn(BaseModel):
+    role: str
+    text: str
+
+
+class ChatRequest(BaseModel):
+    message: str
+    history: List[ChatTurn] = []
+    lang: str = "hi"
+
+
+@api_router.post("/ai/chat")
+async def ai_chat(req: ChatRequest):
+    message = (req.message or "").strip()
+    if not message:
+        raise HTTPException(status_code=400, detail="Empty message")
+    lang = _lang_name(req.lang)
+    system = (
+        f"You are 'Vishwas Sahayak', a gentle, encouraging Christian faith assistant grounded in the Bible. "
+        f"Answer ENTIRELY in {lang}. Be warm, pastoral and concise (at most about 120 words). "
+        f"You may quote and reference Bible verses. Point the user toward faith, hope and prayer. "
+        f"Do NOT give medical, legal or financial advice; gently encourage prayer and consulting the right professionals. "
+        f"Keep a respectful, uplifting Christian tone."
+    )
+    chat = _new_chat(f"chat-{uuid.uuid4().hex[:8]}", system)
+    # Replay recent history (last 10 turns) into a single context-carrying prompt.
+    recent = req.history[-10:]
+    transcript = ""
+    for turn in recent:
+        who = "User" if turn.role == "user" else "Assistant"
+        transcript += f"{who}: {turn.text}\n"
+    full = (transcript + f"User: {message}") if transcript else message
+    try:
+        resp = await chat.send_message(UserMessage(text=full))
+        return {"reply": resp.strip()}
+    except Exception as e:
+        logger.error(f"AI chat failed: {e}")
+        raise HTTPException(status_code=502, detail="AI generation failed")
+
+
 # Include the router in the main app
 app.include_router(api_router)
 
